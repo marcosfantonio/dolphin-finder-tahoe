@@ -34,6 +34,14 @@ cd ~/Documentos/github/dolphin-finder
 ./scripts/build-cachyos.sh
 ```
 
+Durante a instalação, escolha entre o ícone temático Dolphin e o ícone macOS
+Finder. Também é possível selecionar diretamente:
+
+```sh
+./scripts/build-cachyos.sh --theme-icon
+./scripts/build-cachyos.sh --macos-icon
+```
+
 O script verifica as dependências e compila/instala **apenas no seu usuário**.
 Se faltar pacote, mostra a linha `pacman` apropriada. Para pedir ao script que
 instale automaticamente os pacotes ausentes, use:

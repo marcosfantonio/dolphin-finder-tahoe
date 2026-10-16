@@ -3,13 +3,13 @@ set -euo pipefail
 
 cat <<'EOF'
 
-  __  __    _    ____   _____  _   _    _    ___
- |  \/  |  / \  / ___| |_   _|| | | |  / \  / _ \
- | |\/| | / _ \ \___ \   | |  | |_| | / _ \| | | |
- | |  | |/ ___ \ ___) |  | |  |  _  |/ ___ \ |_| |
- |_|  |_/_/   \_\____/   |_|  |_| |_/_/   \_\___/
+ ____   ___  _     ____  _   _ ___ _   _   _____ ___ _   _ ____  _____ ____
+|  _ \ / _ \| |   |  _ \| | | |_ _| \ | | |  ___|_ _| \ | |  _ \| ____|  _ \
+| | | | | | | |   | |_) | | | || ||  \| | | |_   | ||  \| | | | |  _| | |_) |
+| |_| | |_| | |___|  __/| |_| || || |\  | |  _|  | || |\  | |_| | |___|  _ <
+|____/ \___/|_____|_|    \___/|___|_| \_| |_|   |___|_| \_|____/|_____|_| \_\
 
-        MAC TAHOE DOLPHIN FINDER by fantonio
+             DOLPHIN FINDER by fantonio
 
 EOF
 
@@ -20,16 +20,21 @@ Uso: ./scripts/build-cachyos.sh [--install-deps]
   --install-deps  Instala dependências ausentes com sudo pacman.
   --default       Define o Dolphin Finder como gerenciador padrão.
   --no-default    Não altera o gerenciador padrão.
+  --theme-icon    Usa o ícone temático Dolphin.png.
+  --macos-icon    Usa o ícone macOS finder.png.
 EOF
 }
 
 install_deps=false
 default_choice="ask"
+icon_choice="ask"
 for arg in "$@"; do
     case "$arg" in
         --install-deps) install_deps=true ;;
         --default) default_choice="yes" ;;
         --no-default) default_choice="no" ;;
+        --theme-icon) icon_choice="theme" ;;
+        --macos-icon) icon_choice="macos" ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Opção desconhecida: $arg" >&2; usage >&2; exit 2 ;;
     esac
@@ -70,6 +75,17 @@ build_dir="${BUILD_DIR:-$repo_dir/build}"
 prefix="${DOLPHIN_FINDER_PREFIX:-$HOME/.local/opt/dolphin-finder}"
 jobs="${JOBS:-2}"
 
+if [[ "$icon_choice" == "ask" && -t 0 ]]; then
+    printf '\nEscolha o ícone do aplicativo:\n  [1] Ícone temático Dolphin\n  [2] Ícone macOS Finder\nOpção [1/2] (padrão: 1): '
+    read -r answer
+    case "$answer" in
+        2) icon_choice="macos" ;;
+        *) icon_choice="theme" ;;
+    esac
+elif [[ "$icon_choice" == "ask" ]]; then
+    icon_choice="theme"
+fi
+
 cmake -S "$repo_dir" -B "$build_dir" -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DBUILD_TESTING=OFF \
@@ -78,8 +94,22 @@ cmake --build "$build_dir" --parallel "$jobs"
 cmake --install "$build_dir"
 
 profile="$HOME/.local/share/dolphin-finder"
+icon_dir="$HOME/.local/share/icons/hicolor/512x512/apps"
 mkdir -p "$profile/config" "$profile/data" "$profile/cache" "$profile/state" \
-    "$HOME/.local/bin" "$HOME/.local/share/applications"
+    "$HOME/.local/bin" "$HOME/.local/share/applications" "$icon_dir"
+
+if [[ "$icon_choice" == "macos" ]]; then
+    icon_source="$repo_dir/assets/finder.png"
+    icon_label="macOS Finder"
+else
+    icon_source="$repo_dir/assets/Dolphin.png"
+    icon_label="temático Dolphin"
+fi
+if [[ ! -f "$icon_source" ]]; then
+    echo "Ícone não encontrado: $icon_source" >&2
+    exit 1
+fi
+cp -f "$icon_source" "$icon_dir/org.kde.dolphin-finder.png"
 
 # Seed the isolated profile once, preserving any existing per-app choices.
 if [[ ! -e "$profile/config/kdeglobals" && -f "$HOME/.config/kdeglobals" ]]; then
@@ -117,7 +147,7 @@ Type=Application
 Name=Dolphin Finder
 Comment=Dolphin com painel e controles integrados estilo macOS
 Exec=$HOME/.local/bin/dolphin-finder %U
-Icon=org.kde.dolphin
+Icon=org.kde.dolphin-finder
 Terminal=false
 Categories=Qt;KDE;System;FileTools;FileManager;
 StartupNotify=true
@@ -150,3 +180,4 @@ fi
 
 printf '\nInstalação concluída. Execute: %s\n' "$HOME/.local/bin/dolphin-finder"
 printf 'Aplicativo instalado como: Dolphin Finder\n'
+printf 'Ícone escolhido: %s\n' "$icon_label"
