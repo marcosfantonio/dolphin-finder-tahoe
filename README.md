@@ -1,51 +1,70 @@
-# Dolphin
+# Dolphin Finder
 
-Dolphin is KDE's file manager that lets you navigate and browse the contents of your hard drives, USB sticks, SD cards, and more. Creating, moving, or deleting files and folders is simple and fast. See more information [on Dolphin's homepage](https://apps.kde.org/dolphin/).
+**Dolphin Finder** is a customized KDE Dolphin fork that brings a macOS/Finder-inspired interface to KDE Plasma, especially on CachyOS.
 
-![Screenshot](https://cdn.kde.org/screenshots/dolphin/dolphin.png)
+It keeps Dolphin's file-management features while redesigning the window chrome:
 
-## User Documentation
+- Finder-style Places sidebar integrated with the window controls.
+- macOS traffic-light buttons for close, minimize, and maximize/restore.
+- Individual hover symbols on the traffic-light buttons.
+- Frameless rounded window with KWin blur/transparency support.
+- Floating toolbar controls inspired by macOS Tahoe Finder.
+- Back/forward navigation, view settings, split view, search, and other toolbar actions arranged in the Finder-style header.
+- Compact icon grid with 64 px icons, reduced horizontal item width, and increased vertical spacing.
+- Selection markers disabled in the Finder profile.
+- Separate application profile so the system Dolphin remains untouched unless the user explicitly chooses otherwise.
 
-See https://userbase.kde.org/Special:myLanguage/Dolphin.
+## Screenshot
 
-## Contributing
+This is a real screenshot of the customized Dolphin Finder running on KDE Plasma:
 
-Like other projects in the KDE ecosystem, contributions are welcome from all. This repository is managed in [KDE Invent](https://invent.kde.org/system/dolphin), our GitLab instance.
+![Dolphin Finder running on KDE Plasma](dolphin-finder-screenshot.png)
 
-* Want to contribute code? See the [GitLab wiki page](https://community.kde.org/Infrastructure/GitLab) for a tutorial on how to send a merge request.
-* Reporting a bug? Please submit it on the [KDE Bugtracking System](https://bugs.kde.org/enter_bug.cgi?format=guided&product=dolphin). Please do not use the Issues
-tab to report bugs.
-* Is there a part of Dolphin that's not translated? See the [Getting Involved in Translation wiki page](https://community.kde.org/Get_Involved/translation) to see how
-you can help translate!
+The repository also includes the optional application icons used by the installer:
 
-If you get stuck or need help with anything at all, head over to the [KDE New Contributors room](https://go.kde.org/matrix/#/#kde-welcome:kde.org) on Matrix. For questions about Dolphin, please ask in the [KDE File Management room](https://go.kde.org/matrix/#/#kde-fm:kde.org). See [Matrix](https://community.kde.org/Matrix) for more details.
+- `Dolphin.png` — themed Dolphin icon.
+- `finder.png` — macOS Finder-style icon.
 
-## Development Philosophy
+## Project status
 
-Dolphin is a file manager focusing on usability. When reading the term Usability people often assume that the focus is on newbies and only basic features are offered. This is not the case; Dolphin is quite full-featured, but the features are carefully chosen so as to not impede any of the users in the target user groups.
+This is a personal UI customization and an experimental fork, not an official
+KDE project. It is based on KDE Dolphin 26.08.2. The interface is tailored to
+the author's Plasma/KWin setup and may require adjustments on other KDE or Qt
+configurations.
 
-### Target User Groups
+The visual effects depend on the KWin compositor. The project does not bundle
+the external Kvantum theme or MacTahoe icon theme; those can be installed
+separately and selected through the user's KDE/GTK settings.
 
-Focusing on usability means that features are discoverable and efficient to use. The feature set is defined indirectly by the target user group of Dolphin:
+## Building
 
-- **Lisa**: Lisa has been familiar with computers for 10 years. From her job, she has experience with Word, Excel and Outlook. At home she mainly uses the computer for browsing the web and writing e-mails. She requires a file manager for managing photos from the camera, documents she gets via e-mail, or PDFs she downloads with a browser. Lisa knows concepts like folders and a file hierarchy, but she is not familiar with the file hierarchy of Linux.
+The source uses the standard KDE CMake build system. On CachyOS/Arch Linux,
+install the Qt 6, KDE Frameworks 6, Baloo, CMake, Ninja, and compiler
+dependencies, then build with:
 
-- **Simon**: Simon has been a developer at a software company for 8 years. At home he uses a file manager to maintain his large collection of photos and music. Additionally he owns a small homepage and needs to transfer updated files on the FTP server. Moving and copying files are regular tasks in Simon's workflow.
+```sh
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DBUILD_TESTING=OFF
+cmake --build build --parallel 2
+```
 
-Not part of the target user group of Dolphin are Fred and Jeff:
+The custom executable is produced at `build/bin/dolphin`.
 
-- **Fred**: Fred is 75 years old and is able to write e-mails and browsing the web. He is not familiar with file hierarchies and stores all his documents on the desktop.
+## Installation profile
 
-- **Jeff**: Jeff is Linux-freak since the age of 16 a few years ago. He is a developer and in his spare time he acts as administrator for a small company. Jeff has two monitors to keep the overview about his huge number of opened applications.
+The intended launcher uses a separate user profile under:
 
-This does not mean that Fred or Jeff cannot work with Dolphin. But there might be features and concepts of Dolphin that overburden Fred. Also Jeff might miss some features which are a must-have for his daily work. This is acceptable; there are other tools that cater specifically to their needs.
+```text
+~/.local/share/dolphin-finder
+```
 
-### Non-Intrusive Features
+The original `/usr/bin/dolphin` and its global configuration are not replaced
+by the project. Setting Dolphin Finder as the default file manager should be
+an explicit user decision.
 
-Before a feature is added in Dolphin, check whether the feature is mandatory for the target user group. If this is not the case, then this does not mean that the feature cannot be added; first it must be clarified whether the feature might be non-intrusive, so that it adds value for users outside the primary target user group of Dolphin. The term "non-intrusive" is mainly related to the user interface. A feature that adds a lot of clutter to the main menu, context menus or toolbar might harm the target user group. In this case the feature should not be added.
+## Upstream and licensing
 
-A good example of a feature that is non-intrusive is the embedded terminal in Dolphin. It only requires one entry inside a sub-menu, but adds great value for Jeff, who is not part of the target user group.
-
-### Options
-
-Options are mandatory as the "average Joe" user does not exist. Still it is not the goal of Dolphin to offer options for all kind of things. Again the focus is on the possible needs of the target user group. Each additional option makes it harder finding other options, so the same rules for features are applied to options too.
+This project is based on [KDE Dolphin](https://invent.kde.org/system/dolphin),
+release 26.08.2. The original copyright notices and license files are retained
+in this repository. See `COPYING`, `COPYING.DOC`, and `LICENSES/` for details.
