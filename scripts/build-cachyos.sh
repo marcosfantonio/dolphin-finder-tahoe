@@ -1,18 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cat <<'EOF'
+
+  __  __    _    ____   _____  _   _    _    ___
+ |  \/  |  / \  / ___| |_   _|| | | |  / \  / _ \
+ | |\/| | / _ \ \___ \   | |  | |_| | / _ \| | | |
+ | |  | |/ ___ \ ___) |  | |  |  _  |/ ___ \ |_| |
+ |_|  |_/_/   \_\____/   |_|  |_| |_/_/   \_\___/
+
+        MAC TAHOE DOLPHIN FINDER by fantonio
+
+EOF
+
 usage() {
     cat <<'EOF'
 Uso: ./scripts/build-cachyos.sh [--install-deps]
 
   --install-deps  Instala dependências ausentes com sudo pacman.
+  --default       Define o Dolphin Finder como gerenciador padrão.
+  --no-default    Não altera o gerenciador padrão.
 EOF
 }
 
 install_deps=false
+default_choice="ask"
 for arg in "$@"; do
     case "$arg" in
         --install-deps) install_deps=true ;;
+        --default) default_choice="yes" ;;
+        --no-default) default_choice="no" ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Opção desconhecida: $arg" >&2; usage >&2; exit 2 ;;
     esac
@@ -60,7 +77,7 @@ cmake -S "$repo_dir" -B "$build_dir" -G Ninja \
 cmake --build "$build_dir" --parallel "$jobs"
 cmake --install "$build_dir"
 
-profile="$HOME/.local/share/dolphin-finder-test"
+profile="$HOME/.local/share/dolphin-finder"
 mkdir -p "$profile/config" "$profile/data" "$profile/cache" "$profile/state" \
     "$HOME/.local/bin" "$HOME/.local/share/applications"
 
@@ -82,7 +99,7 @@ cat > "$HOME/.local/bin/dolphin-finder" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 prefix="$prefix"
-profile="\${DOLPHIN_FINDER_PROFILE:-\$HOME/.local/share/dolphin-finder-test}"
+profile="\${DOLPHIN_FINDER_PROFILE:-\$HOME/.local/share/dolphin-finder}"
 export XDG_CONFIG_HOME="\$profile/config"
 export XDG_DATA_HOME="\$profile/data"
 export XDG_CACHE_HOME="\$profile/cache"
@@ -97,7 +114,7 @@ chmod +x "$HOME/.local/bin/dolphin-finder"
 cat > "$HOME/.local/share/applications/org.kde.dolphin-finder.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Dolphin Finder (Teste)
+Name=Dolphin Finder
 Comment=Dolphin com painel e controles integrados estilo macOS
 Exec=$HOME/.local/bin/dolphin-finder %U
 Icon=org.kde.dolphin
@@ -111,5 +128,25 @@ if command -v update-desktop-database &>/dev/null; then
     update-desktop-database "$HOME/.local/share/applications" || true
 fi
 
+if [[ "$default_choice" == "ask" && -t 0 ]]; then
+    printf '\nDeseja substituir o gerenciador de arquivos padrão por Dolphin Finder? [y/N] '
+    read -r answer
+    case "$answer" in
+        [yY]|[yY][eE][sS]|[sS]|[sS][iI][mM]) default_choice="yes" ;;
+        *) default_choice="no" ;;
+    esac
+fi
+
+if [[ "$default_choice" == "yes" ]]; then
+    if command -v xdg-mime &>/dev/null; then
+        xdg-mime default org.kde.dolphin-finder.desktop inode/directory
+        printf 'Gerenciador padrão definido como Dolphin Finder.\n'
+    else
+        printf 'xdg-mime não encontrado; o gerenciador padrão não foi alterado.\n' >&2
+    fi
+else
+    printf 'Gerenciador padrão preservado.\n'
+fi
+
 printf '\nInstalação concluída. Execute: %s\n' "$HOME/.local/bin/dolphin-finder"
-printf 'O Dolphin do sistema não foi substituído.\n'
+printf 'Aplicativo instalado como: Dolphin Finder\n'

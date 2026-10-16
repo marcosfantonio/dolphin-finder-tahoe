@@ -53,8 +53,8 @@ dolphin-finder
 ```
 
 O script cria o executável em `~/.local/opt/dolphin-finder`, um lançador em
-`~/.local/bin/dolphin-finder` e o atalho **Dolphin Finder (Teste)** no menu.
-O perfil fica em `~/.local/share/dolphin-finder-test`. Na primeira instalação,
+`~/.local/bin/dolphin-finder` e o atalho **Dolphin Finder** no menu.
+O perfil fica em `~/.local/share/dolphin-finder`. Na primeira instalação,
 o `kdeglobals` e a configuração do Kvantum do usuário são copiados quando
 existem; não são sobrescritos em builds seguintes.
 
@@ -95,7 +95,7 @@ pelo script:
 - `~/.local/bin/dolphin-finder`
 - `~/.local/share/applications/org.kde.dolphin-finder.desktop`
 - `~/.local/opt/dolphin-finder`
-- `~/.local/share/dolphin-finder-test`
+- `~/.local/share/dolphin-finder`
 
 O Dolphin original (`/usr/bin/dolphin`) e as configurações globais permanecem
 intactos.
