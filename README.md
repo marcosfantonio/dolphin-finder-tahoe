@@ -36,24 +36,40 @@ The visual effects depend on the KWin compositor. The project does not bundle
 the external Kvantum theme or MacTahoe icon theme; those can be installed
 separately and selected through the user's KDE/GTK settings.
 
-## Building
+## Installation
 
-The source uses the standard KDE CMake build system. On CachyOS/Arch Linux,
-install the Qt 6, KDE Frameworks 6, Baloo, CMake, Ninja, and compiler
-dependencies, then build with:
+This project is intended to be installed through the included interactive
+installer. Users do **not** need to configure or build the project manually.
+
+On CachyOS, clone the repository and run:
 
 ```sh
-cmake -S . -B build -G Ninja \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DBUILD_TESTING=OFF
-cmake --build build --parallel 2
+git clone <repository-url> dolphin-finder
+cd dolphin-finder
+./install.sh --install-deps
 ```
 
-The custom executable is produced at `build/bin/dolphin`.
+The installer builds the application internally, installs it under the user's
+home directory, creates the **Dolphin Finder** application entry, and leaves
+the system Dolphin untouched by default.
+
+During installation it asks for the application icon — themed `Dolphin.png`
+or macOS-style `finder.png` — and whether directory links should open with
+Dolphin Finder. The default answer for the file-manager question is **No**.
+
+Explicit choices are also supported:
+
+```sh
+./install.sh --theme-icon --no-default
+./install.sh --macos-icon --default
+```
+
+After installation, launch **Dolphin Finder** from the application menu or run
+`dolphin-finder` in a terminal.
 
 ## Installation profile
 
-The intended launcher uses a separate user profile under:
+The installer uses a separate user profile under:
 
 ```text
 ~/.local/share/dolphin-finder
