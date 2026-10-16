@@ -1,32 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "finderchrome.h"
 
+#include <KWindowEffects>
 #include <KConfigGroup>
 #include <KSharedConfig>
-#include <KWindowEffects>
+#include "dolphin_iconsmodesettings.h"
 #include <QApplication>
 #include <QDockWidget>
-#include <QEnterEvent>
 #include <QHBoxLayout>
 #include <QMainWindow>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QEnterEvent>
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWindow>
 
-namespace
-{
+namespace {
 class TrafficLightButton : public QToolButton
 {
 public:
     TrafficLightButton(int kind, const QColor &color, QWidget *parent)
-        : QToolButton(parent)
-        , m_kind(kind)
-        , m_color(color)
-    {
-    }
+        : QToolButton(parent), m_kind(kind), m_color(color) {}
 
 protected:
     void enterEvent(QEnterEvent *event) override
@@ -46,8 +42,7 @@ protected:
         painter.setPen(Qt::NoPen);
         painter.setBrush(isDown() ? m_color.darker(120) : m_color);
         painter.drawEllipse(QRectF(0, 0, 14, 14));
-        if (!underMouse())
-            return;
+        if (!underMouse()) return;
 
         const QColor ink = m_color.darker(290);
         painter.setPen(QPen(ink, 1.25, Qt::SolidLine, Qt::RoundCap));
@@ -79,24 +74,15 @@ class FinderHeader : public QWidget
 {
 public:
     using QWidget::QWidget;
-    QSize sizeHint() const override
-    {
-        return QSize(240, 48);
-    }
-    QSize minimumSizeHint() const override
-    {
-        return sizeHint();
-    }
+    QSize sizeHint() const override { return QSize(240, 48); }
+    QSize minimumSizeHint() const override { return sizeHint(); }
 };
 
 class WindowGestures : public QObject
 {
 public:
     WindowGestures(QMainWindow *window, QWidget *header, QToolBar *toolbar)
-        : QObject(window)
-        , m_window(window)
-        , m_header(header)
-        , m_toolbar(toolbar)
+        : QObject(window), m_window(window), m_header(header), m_toolbar(toolbar)
     {
         qApp->installEventFilter(this);
     }
@@ -121,14 +107,10 @@ protected:
         const QPoint pos = m_window->mapFromGlobal(mouse->globalPosition().toPoint());
         Qt::Edges edges;
         if (!m_window->isMaximized() && !m_window->isFullScreen()) {
-            if (pos.x() < 6)
-                edges |= Qt::LeftEdge;
-            if (pos.x() >= m_window->width() - 6)
-                edges |= Qt::RightEdge;
-            if (pos.y() < 6)
-                edges |= Qt::TopEdge;
-            if (pos.y() >= m_window->height() - 6)
-                edges |= Qt::BottomEdge;
+            if (pos.x() < 6) edges |= Qt::LeftEdge;
+            if (pos.x() >= m_window->width() - 6) edges |= Qt::RightEdge;
+            if (pos.y() < 6) edges |= Qt::TopEdge;
+            if (pos.y() >= m_window->height() - 6) edges |= Qt::BottomEdge;
         }
         if (edges && event->type() == QEvent::MouseButtonPress) {
             return m_window->windowHandle()->startSystemResize(edges);
@@ -152,11 +134,17 @@ private:
 
 void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *toolbar)
 {
+    // Keep a Finder-like grid without making the items too tiny: five to six
+    // columns in the normal window, with readable labels.
+    IconsModeSettings::setIconSize(64);
+    IconsModeSettings::setPreviewSize(64);
+    IconsModeSettings::setTextWidthIndex(1);
+    IconsModeSettings::setMaximumTextLines(2);
+    IconsModeSettings::self()->save();
     KConfigGroup config(KSharedConfig::openConfig(), QStringLiteral("FinderChrome"));
     if (config.readEntry("LayoutVersion", 0) < 1) {
         for (auto *dock : window->findChildren<QDockWidget *>()) {
-            if (dock != places)
-                dock->hide();
+            if (dock != places) dock->hide();
         }
         window->resize(1000, 700);
         config.writeEntry("LayoutVersion", 1);
@@ -164,13 +152,34 @@ void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *too
     }
     window->setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
     window->setContentsMargins(6, 6, 6, 6);
-    window->setStyleSheet(
-        QStringLiteral("DolphinMainWindow { background: transparent; }"
-                       "QMainWindow::separator { width: 6px; background: transparent; }"
-                       "QDockWidget#placesDock QAbstractItemView { background: transparent; border: none; padding: 6px; }"
-                       "QDockWidget#placesDock QAbstractItemView::item:selected { background: rgba(255,255,255,28); color: #3584e4; border-radius: 6px; }"
-                       "QWidget#finderContent { background: #1e1e20; border-radius: 18px; }"
-                       "QToolBar { background: transparent; border: none; spacing: 6px; padding: 4px; }"));
+    window->setStyleSheet(QStringLiteral(
+        "DolphinMainWindow { background: transparent; }"
+        "QMainWindow::separator { width: 6px; background: transparent; }"
+        "QDockWidget#placesDock QAbstractItemView { background: transparent; border: none; padding: 6px; }"
+        "QDockWidget#placesDock QAbstractItemView::item:selected { background: rgba(255,255,255,28); color: #3584e4; border-radius: 6px; }"
+        "QWidget#finderContent { background: #1e1e20; border-radius: 18px; }"
+        "QToolBar { background: transparent; border: none; spacing: 6px; padding: 4px; }"
+        "QWidget#finderNavigationCapsule { background: rgba(255,255,255,20);"
+        " border: 1px solid rgba(255,255,255,26); border-radius: 16px;"
+        " margin: 2px; padding: 0px; }"
+        "QWidget#finderNavigationCapsule QToolButton { background: transparent;"
+        " border: none; border-radius: 14px; margin: 0px; padding: 0px; }"
+        "QWidget#finderNavigationCapsule QToolButton:hover {"
+        " background: rgba(255,255,255,42); }"
+        "QWidget#finderNavigationCapsule QToolButton:pressed {"
+        " background: rgba(255,255,255,58); }"
+        "QToolBar QToolButton { background: rgba(255,255,255,20);"
+        " border: 1px solid rgba(255,255,255,26); border-radius: 15px;"
+        " min-width: 30px; min-height: 30px; margin: 2px; padding: 0px; }"
+        "QToolBar QToolButton:hover { background: rgba(255,255,255,42);"
+        " border-color: rgba(255,255,255,60); }"
+        "QToolBar QToolButton:pressed { background: rgba(255,255,255,58); }"
+        "QToolButton#finderBackButton, QToolButton#finderForwardButton {"
+        " background: rgba(255,255,255,20); border: 1px solid rgba(255,255,255,26);"
+        " border-radius: 15px; margin: 2px; padding: 0px; }"
+        "QToolButton#finderBackButton:hover, QToolButton#finderForwardButton:hover {"
+        " background: rgba(255,255,255,42); }"
+        "QToolButton#finderViewSettingsButton::menu-indicator { image: none; width: 0px; }"));
 
     // Keep the toolbar in the content column so Places extends to the top.
     QWidget *tabs = window->takeCentralWidget();
@@ -183,6 +192,91 @@ void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *too
     toolbar->setMovable(false);
     toolbar->setFloatable(false);
     toolbar->setFixedHeight(48);
+    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    for (QAction *action : toolbar->actions()) {
+        if (auto *button = qobject_cast<QToolButton *>(toolbar->widgetForAction(action))) {
+            button->setIconSize(QSize(17, 17));
+            button->setFixedSize(32, 32);
+            button->setAutoRaise(false);
+            if (action->objectName() == QLatin1String("view_settings")) {
+                button->setArrowType(Qt::NoArrow);
+                button->setPopupMode(QToolButton::InstantPopup);
+            }
+        }
+    }
+    QAction *backAction = nullptr;
+    QAction *forwardAction = nullptr;
+    for (QAction *action : toolbar->actions()) {
+        if (action->objectName() == QLatin1String("go_back") || action->objectName() == QLatin1String("back")) {
+            backAction = action;
+        } else if (action->objectName() == QLatin1String("go_forward") || action->objectName() == QLatin1String("forward")) {
+            forwardAction = action;
+        }
+    }
+    // Some KToolBar versions expose the action name only through the widget.
+    // Recover those two actions from their existing tool buttons as well.
+    for (QToolButton *button : toolbar->findChildren<QToolButton *>()) {
+        const QString iconName = button->icon().name().toLower();
+        QAction *action = button->defaultAction();
+        if (action && action->objectName() == QLatin1String("view_settings")) {
+            button->setObjectName(QStringLiteral("finderViewSettingsButton"));
+            button->setArrowType(Qt::NoArrow);
+            button->setPopupMode(QToolButton::InstantPopup);
+            button->setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; width: 0px; }"));
+        }
+        if (iconName.contains(QStringLiteral("previous")) || iconName.contains(QStringLiteral("back"))) {
+            button->setObjectName(QStringLiteral("finderBackButton"));
+        } else if (iconName.contains(QStringLiteral("next")) || iconName.contains(QStringLiteral("forward"))) {
+            button->setObjectName(QStringLiteral("finderForwardButton"));
+        }
+        if (!action) {
+            continue;
+        }
+        const QString name = action->objectName().toLower();
+        const QString text = action->text().toLower();
+        if (!backAction && (name.contains(QStringLiteral("back")) || text.contains(QStringLiteral("voltar")))) {
+            backAction = action;
+        } else if (!forwardAction && (name.contains(QStringLiteral("forward")) || text.contains(QStringLiteral("avançar"))
+                   || text.contains(QStringLiteral("avancar")))) {
+            forwardAction = action;
+        }
+    }
+    // On Plasma's current KToolBar, the two navigation actions are exposed
+    // without an icon name. They are the first two direct toolbar buttons.
+    int navigationButtons = 0;
+    for (QToolButton *button : toolbar->findChildren<QToolButton *>()) {
+        if (button->parentWidget() != toolbar || navigationButtons >= 2) {
+            continue;
+        }
+        button->setObjectName(navigationButtons++ == 0 ? QStringLiteral("finderBackButton") : QStringLiteral("finderForwardButton"));
+    }
+    if (backAction && forwardAction) {
+        auto *capsule = new QWidget(toolbar);
+        capsule->setObjectName(QStringLiteral("finderNavigationCapsule"));
+        capsule->setFixedSize(66, 32);
+        capsule->setStyleSheet(QStringLiteral(
+            "#finderNavigationCapsule { background: rgba(255,255,255,20);"
+            " border: 1px solid rgba(255,255,255,26); border-radius: 16px; }"
+            "#finderNavigationCapsule QToolButton { background: transparent; border: none;"
+            " border-radius: 14px; margin: 0; padding: 0; }"
+            "#finderNavigationCapsule QToolButton:hover { background: rgba(255,255,255,42); }"));
+        auto *navigationLayout = new QHBoxLayout(capsule);
+        navigationLayout->setContentsMargins(1, 1, 1, 1);
+        navigationLayout->setSpacing(0);
+        auto *backButton = new QToolButton(capsule);
+        auto *forwardButton = new QToolButton(capsule);
+        backButton->setDefaultAction(backAction);
+        forwardButton->setDefaultAction(forwardAction);
+        backButton->setIconSize(QSize(18, 18));
+        forwardButton->setIconSize(QSize(18, 18));
+        backButton->setFixedSize(31, 28);
+        forwardButton->setFixedSize(31, 28);
+        navigationLayout->addWidget(backButton);
+        navigationLayout->addWidget(forwardButton);
+        toolbar->insertWidget(backAction, capsule);
+        toolbar->removeAction(backAction);
+        toolbar->removeAction(forwardAction);
+    }
     content->addToolBar(Qt::TopToolBarArea, toolbar);
     content->setCentralWidget(tabs);
     window->setCentralWidget(content);
@@ -219,14 +313,10 @@ void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *too
         button->setToolTip(labels[i]);
         button->setAccessibleName(labels[i]);
         QObject::connect(button, &QToolButton::clicked, window, [window, i] {
-            if (i == 0)
-                window->close();
-            else if (i == 1)
-                window->showMinimized();
-            else if (window->isMaximized())
-                window->showNormal();
-            else
-                window->showMaximized();
+            if (i == 0) window->close();
+            else if (i == 1) window->showMinimized();
+            else if (window->isMaximized()) window->showNormal();
+            else window->showMaximized();
         });
         lightsLayout->addWidget(button);
     }

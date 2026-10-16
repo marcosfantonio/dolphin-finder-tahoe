@@ -1,115 +1,51 @@
-# Dolphin Finder
+# Dolphin
 
-Uma experiência estilo Finder/macOS para o Dolphin do KDE: painel de locais
-integrado aos controles da janela, cabeçalho sem decoração separada e fundo
-translúcido com blur no KWin.
+Dolphin is KDE's file manager that lets you navigate and browse the contents of your hard drives, USB sticks, SD cards, and more. Creating, moving, or deleting files and folders is simple and fast. See more information [on Dolphin's homepage](https://apps.kde.org/dolphin/).
 
-Este é um **fork de teste**, baseado no Dolphin 26.08.2 do KDE. Não substitui
-nem altera o Dolphin do sistema, não registra o serviço de gerenciador de
-arquivos padrão e mantém configurações próprias.
+![Screenshot](https://cdn.kde.org/screenshots/dolphin/dolphin.png)
 
-## O que muda
+## User Documentation
 
-- Painel **Locais** ocupa toda a coluna esquerda; os botões vermelho, amarelo e
-  verde ficam no topo dela.
-- Ícones de fechar, minimizar e maximizar/restaurar aparecem no hover de cada
-  botão, individualmente.
-- A barra de navegação e os arquivos ficam na coluna direita, sem uma barra de
-  título KWin separada.
-- Blur e transparência dependem do compositor KWin ativo. O tema e os ícones
-  MacTahoe são opcionais e não estão incluídos neste repositório.
-- O marcador de seleção “+/−” do Dolphin é desativado no perfil novo.
-- O painel Locais permanece fixo/visível, já que também abriga os controles.
+See https://userbase.kde.org/Special:myLanguage/Dolphin.
 
-Arraste a área livre do cabeçalho para mover a janela; dê dois cliques nela
-para maximizar/restaurar. A janela pode ser redimensionada pelas bordas.
+## Contributing
 
-## Requisitos e instalação no CachyOS
+Like other projects in the KDE ecosystem, contributions are welcome from all. This repository is managed in [KDE Invent](https://invent.kde.org/system/dolphin), our GitLab instance.
 
-No CachyOS, com sessão KDE Plasma/Wayland ou X11, clone este repositório e rode:
+* Want to contribute code? See the [GitLab wiki page](https://community.kde.org/Infrastructure/GitLab) for a tutorial on how to send a merge request.
+* Reporting a bug? Please submit it on the [KDE Bugtracking System](https://bugs.kde.org/enter_bug.cgi?format=guided&product=dolphin). Please do not use the Issues
+tab to report bugs.
+* Is there a part of Dolphin that's not translated? See the [Getting Involved in Translation wiki page](https://community.kde.org/Get_Involved/translation) to see how
+you can help translate!
 
-```sh
-git clone <URL_DO_REPOSITORIO> ~/Documentos/github/dolphin-finder
-cd ~/Documentos/github/dolphin-finder
-./scripts/build-cachyos.sh
-```
+If you get stuck or need help with anything at all, head over to the [KDE New Contributors room](https://go.kde.org/matrix/#/#kde-welcome:kde.org) on Matrix. For questions about Dolphin, please ask in the [KDE File Management room](https://go.kde.org/matrix/#/#kde-fm:kde.org). See [Matrix](https://community.kde.org/Matrix) for more details.
 
-Durante a instalação, escolha entre o ícone temático Dolphin e o ícone macOS
-Finder. Também é possível selecionar diretamente:
+## Development Philosophy
 
-```sh
-./scripts/build-cachyos.sh --theme-icon
-./scripts/build-cachyos.sh --macos-icon
-```
+Dolphin is a file manager focusing on usability. When reading the term Usability people often assume that the focus is on newbies and only basic features are offered. This is not the case; Dolphin is quite full-featured, but the features are carefully chosen so as to not impede any of the users in the target user groups.
 
-O script verifica as dependências e compila/instala **apenas no seu usuário**.
-Se faltar pacote, mostra a linha `pacman` apropriada. Para pedir ao script que
-instale automaticamente os pacotes ausentes, use:
+### Target User Groups
 
-```sh
-./scripts/build-cachyos.sh --install-deps
-```
+Focusing on usability means that features are discoverable and efficient to use. The feature set is defined indirectly by the target user group of Dolphin:
 
-Isso requer `sudo` e instala dependências de desenvolvimento do KDE/Qt pelo
-pacman. O build usa dois jobs por padrão; ajuste com `JOBS=4` se houver memória
-suficiente.
+- **Lisa**: Lisa has been familiar with computers for 10 years. From her job, she has experience with Word, Excel and Outlook. At home she mainly uses the computer for browsing the web and writing e-mails. She requires a file manager for managing photos from the camera, documents she gets via e-mail, or PDFs she downloads with a browser. Lisa knows concepts like folders and a file hierarchy, but she is not familiar with the file hierarchy of Linux.
 
-Depois, abra **Dolphin Finder** pelo menu de aplicativos ou execute:
+- **Simon**: Simon has been a developer at a software company for 8 years. At home he uses a file manager to maintain his large collection of photos and music. Additionally he owns a small homepage and needs to transfer updated files on the FTP server. Moving and copying files are regular tasks in Simon's workflow.
 
-```sh
-dolphin-finder
-```
+Not part of the target user group of Dolphin are Fred and Jeff:
 
-O script cria o executável em `~/.local/opt/dolphin-finder`, um lançador em
-`~/.local/bin/dolphin-finder` e o atalho **Dolphin Finder** no menu.
-O perfil fica em `~/.local/share/dolphin-finder`. Na primeira instalação,
-o `kdeglobals` e a configuração do Kvantum do usuário são copiados quando
-existem; não são sobrescritos em builds seguintes.
+- **Fred**: Fred is 75 years old and is able to write e-mails and browsing the web. He is not familiar with file hierarchies and stores all his documents on the desktop.
 
-Para personalizar o visual no outro computador, instale nele o tema Kvantum e
-os ícones MacTahoe desejados. A aparência exata do tema não é distribuída por
-este projeto.
+- **Jeff**: Jeff is Linux-freak since the age of 16 a few years ago. He is a developer and in his spare time he acts as administrator for a small company. Jeff has two monitors to keep the overview about his huge number of opened applications.
 
-## Desenvolver e testar
+This does not mean that Fred or Jeff cannot work with Dolphin. But there might be features and concepts of Dolphin that overburden Fred. Also Jeff might miss some features which are a must-have for his daily work. This is acceptable; there are other tools that cater specifically to their needs.
 
-```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="$HOME/.local/opt/dolphin-finder"
-cmake --build build --parallel 2
-cmake --install build
-```
+### Non-Intrusive Features
 
-O teste de fumaça automatizado da interface, incluindo split view e controles
-da janela, pode ser rodado em uma sessão gráfica com:
+Before a feature is added in Dolphin, check whether the feature is mandatory for the target user group. If this is not the case, then this does not mean that the feature cannot be added; first it must be clarified whether the feature might be non-intrusive, so that it adds value for users outside the primary target user group of Dolphin. The term "non-intrusive" is mainly related to the user interface. A feature that adds a lot of clutter to the main menu, context menus or toolbar might harm the target user group. In this case the feature should not be added.
 
-```sh
-QT_FORCE_STDERR_LOGGING=1 ~/.local/bin/dolphin-finder --finder-self-test
-```
+A good example of a feature that is non-intrusive is the embedded terminal in Dolphin. It only requires one entry inside a sub-menu, but adds great value for Jeff, who is not part of the target user group.
 
-O modo `offscreen` do Qt também verifica os controles, mas não consegue validar
-blur, movimentação ou redimensionamento do compositor.
+### Options
 
-## Limitações
-
-Esta alteração é uma adaptação da interface do Dolphin, não uma implementação
-completa do Finder. Algumas preferências e atualizações do Dolphin podem
-precisar de ajustes no fork. O repositório não contém os temas externos do KDE.
-
-## Remover
-
-Feche as janelas do Dolphin Finder e remova, se desejar, os caminhos criados
-pelo script:
-
-- `~/.local/bin/dolphin-finder`
-- `~/.local/share/applications/org.kde.dolphin-finder.desktop`
-- `~/.local/opt/dolphin-finder`
-- `~/.local/share/dolphin-finder`
-
-O Dolphin original (`/usr/bin/dolphin`) e as configurações globais permanecem
-intactos.
-
-## Licença
-
-O código original do Dolphin e este fork são distribuídos sob as licenças
-indicadas nos arquivos `COPYING`, `COPYING.DOC` e `LICENSES/`. Os avisos de
-copyright dos contribuidores KDE foram mantidos.
+Options are mandatory as the "average Joe" user does not exist. Still it is not the goal of Dolphin to offer options for all kind of things. Again the focus is on the possible needs of the target user group. Each additional option makes it harder finding other options, so the same rules for features are applied to options too.

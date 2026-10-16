@@ -184,19 +184,16 @@ void DolphinItemListView::updateFont()
 void DolphinItemListView::updateGridSize()
 {
     const ViewModeSettings settings(itemLayout());
-    const bool useGlobalViewProps = GeneralSettings::globalViewProps();
-
     // Calculate the size of the icon
     // Only use zoom stored in settings if we're using global view props
     const int configuredSize = previewsShown() ? settings.previewSize() : settings.iconSize();
-    // The cached size is the per-folder zoom, shared by every view mode, so the fallback below must
-    // not be stored: it would reach the other modes as though the folder carried it.
-    const int cachedSize = previewsShown() ? m_previewSize : m_iconSize;
-    const int iconSize = (useGlobalViewProps || cachedSize <= 0) ? configuredSize : cachedSize;
+    // Finder mode keeps a predictable compact grid instead of restoring a
+    // per-folder zoom value that can make the gaps and icons very large.
+    const int iconSize = configuredSize;
     m_zoomLevel = ZoomLevelInfo::zoomLevelForIconSize(QSize(iconSize, iconSize));
     KItemListStyleOption option = styleOption();
 
-    const int padding = 2;
+    const int padding = 1;
     int horizontalMargin = 0;
     int verticalMargin = 0;
 
@@ -214,17 +211,18 @@ void DolphinItemListView::updateGridSize()
         // by each pixel the font gets larger the factor increases by 1/9
         auto fontFactor = option.fontMetrics.averageCharWidth() / 9.0;
         // 48 is chosen as the magic number here to give more room for the text to be readable
-        itemWidth = 48 + IconsModeSettings::textWidthIndex() * 64 * fontFactor * zoomFactor;
+        // Finder mode trims the standard label width by roughly 25% while
+        // keeping enough room for readable names under 64 px icons.
+        itemWidth = 48 + IconsModeSettings::textWidthIndex() * 48 * fontFactor * zoomFactor;
 
         if (itemWidth < iconSize + padding * 2 * zoomFactor) {
             itemWidth = iconSize + padding * 2 * zoomFactor;
         }
 
-        itemHeight = padding * 3 + iconSize + option.fontMetrics.lineSpacing();
+        itemHeight = padding * 3 + iconSize + option.fontMetrics.lineSpacing() + 8;
 
-        const auto margin = style()->pixelMetric(QStyle::PM_SizeGripSize);
-        horizontalMargin = margin;
-        verticalMargin = margin;
+        horizontalMargin = 4;
+        verticalMargin = 12;
         maxTextLines = IconsModeSettings::maximumTextLines();
         break;
     }
