@@ -36,6 +36,12 @@ The visual effects depend on the KWin compositor. The project does not bundle
 the external Kvantum theme or MacTahoe icon theme; those can be installed
 separately and selected through the user's KDE/GTK settings.
 
+The interface is compatible with KDE/KWin visual effects and can be used with
+third-party compositor effects such as **Glass Refraction** and **Glass**, when
+those effects are installed and enabled in the user's Plasma configuration.
+The exact blur, refraction, transparency and glass appearance depends on the
+active compositor and its settings.
+
 ## Installation
 
 This project is intended to be installed through the included interactive
@@ -66,6 +72,23 @@ Explicit choices are also supported:
 
 After installation, launch **Dolphin Finder** from the application menu or run
 `dolphin-finder` in a terminal.
+
+## Uninstallation
+
+Run the included uninstaller from the repository:
+
+```sh
+./uninstall.sh
+```
+
+It removes the user installation, launcher, icon and isolated profile. It does
+not remove the source repository or the system Dolphin. The script asks whether
+KDE Dolphin should be restored as the default directory handler. To restore it
+without prompting, use:
+
+```sh
+./uninstall.sh --restore-dolphin
+```
 
 ## Installation profile
 
