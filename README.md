@@ -59,6 +59,10 @@ The installer builds the application internally, installs it under the user's
 home directory, creates the **Dolphin Finder** application entry, and leaves
 the system Dolphin untouched by default.
 
+It also records the installed repository commit. When run again from a newer
+checkout, it shows the installed and available commits and asks whether the
+application should be updated. Answer `n` to keep the current installation.
+
 During installation it asks for the application icon — themed `Dolphin.png`
 or macOS-style `finder.png` — and whether directory links should open with
 Dolphin Finder. The default answer for the file-manager question is **No**.

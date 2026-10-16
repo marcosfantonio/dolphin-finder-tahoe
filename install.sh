@@ -65,6 +65,34 @@ repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 build_dir="${BUILD_DIR:-$repo_dir/build}"
 prefix="${DOLPHIN_FINDER_PREFIX:-$HOME/.local/opt/dolphin-finder}"
 
+current_commit="unknown"
+if command -v git &>/dev/null && git -C "$repo_dir" rev-parse HEAD &>/dev/null; then
+    current_commit="$(git -C "$repo_dir" rev-parse HEAD)"
+fi
+installed_commit_file="$prefix/share/dolphin-finder/installed-commit"
+installed_commit=""
+if [[ -f "$installed_commit_file" ]]; then
+    installed_commit="$(head -n 1 "$installed_commit_file")"
+fi
+
+if [[ -n "$installed_commit" && "$installed_commit" != "$current_commit" && "$current_commit" != unknown ]]; then
+    printf '\nAn installed Dolphin Finder version was found.\n'
+    printf 'Installed commit: %s\n' "${installed_commit:0:12}"
+    printf 'Available commit:  %s\n' "${current_commit:0:12}"
+    if [[ -t 0 ]]; then
+        printf 'Update the installed application now? [Y/n] '
+        read -r answer
+        case "$answer" in
+            [nN]|[nN][oO])
+                echo "Installation cancelled; the current version was preserved."
+                exit 0
+                ;;
+        esac
+    else
+        echo "Non-interactive install: updating automatically."
+    fi
+fi
+
 if [[ "$icon_choice" == ask && -t 0 ]]; then
     printf '\nChoose the application icon:\n  [1] Themed Dolphin icon\n  [2] macOS Finder icon\nChoice [1/2] (default: 1): '
     read -r answer
@@ -78,6 +106,8 @@ cmake -S "$repo_dir" -B "$build_dir" -G Ninja \
     -DCMAKE_INSTALL_PREFIX="$prefix"
 cmake --build "$build_dir" --parallel "${JOBS:-2}"
 cmake --install "$build_dir"
+mkdir -p "$prefix/share/dolphin-finder"
+printf '%s\n' "$current_commit" > "$prefix/share/dolphin-finder/installed-commit"
 
 profile="$HOME/.local/share/dolphin-finder"
 icon_dir="$HOME/.local/share/icons/hicolor/512x512/apps"
