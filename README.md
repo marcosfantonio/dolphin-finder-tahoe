@@ -18,7 +18,7 @@ It keeps Dolphin's file-management features while redesigning the window chrome:
 
 This is a real screenshot of the customized Dolphin Finder running on KDE Plasma:
 
-![Dolphin Finder running on KDE Plasma](dolphin-finder-screenshot.png)
+![Dolphin Finder running on KDE Plasma](screenshot.png)
 
 The repository also includes the optional application icons used by the installer:
 
