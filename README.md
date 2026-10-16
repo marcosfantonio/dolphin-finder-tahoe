@@ -14,9 +14,7 @@ It keeps Dolphin's file-management features while redesigning the window chrome:
 - Selection markers disabled in the Finder profile.
 - Separate application profile so the system Dolphin remains untouched unless the user explicitly chooses otherwise.
 
-## Screenshot
-
-This is a real screenshot of the customized Dolphin Finder running on KDE Plasma:
+## Showcase
 
 ![Dolphin Finder running on KDE Plasma](screenshot.png)
 
