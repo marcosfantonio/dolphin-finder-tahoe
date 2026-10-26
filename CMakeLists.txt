@@ -93,15 +93,8 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
     ColorScheme
 )
 
-find_package(KF6UserFeedback ${KF6_MIN_VERSION})
-set_package_properties(KF6UserFeedback
-        PROPERTIES TYPE OPTIONAL
-        PURPOSE "Used for submission of telemetry data"
-        )
-
-if(KF6UserFeedback_FOUND)
-    set(HAVE_KUSERFEEDBACK TRUE)
-endif()
+# This application does not participate in another product's telemetry.
+set(HAVE_KUSERFEEDBACK FALSE)
 
 find_package(KF6 ${KF6_MIN_VERSION} OPTIONAL_COMPONENTS
     DocTools

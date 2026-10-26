@@ -1,6 +1,6 @@
 # Dolphin Finder
 
-**Dolphin Finder** is a customized KDE Dolphin fork that brings a macOS/Finder-inspired interface to KDE Plasma, especially on CachyOS.
+**Dolphin Finder** is an independent file manager with a macOS/Finder-inspired interface for KDE Plasma, especially on CachyOS.
 
 It keeps Dolphin's file-management features while redesigning the window chrome:
 
@@ -12,7 +12,7 @@ It keeps Dolphin's file-management features while redesigning the window chrome:
 - Back/forward navigation, view settings, split view, search, and other toolbar actions arranged in the Finder-style header.
 - Compact icon grid with 64 px icons, reduced horizontal item width, and increased vertical spacing.
 - Selection markers disabled in the Finder profile.
-- Separate application profile so the system Dolphin remains untouched unless the user explicitly chooses otherwise.
+- Dedicated application identity, icon and isolated configuration profile.
 
 ## Showcase
 
@@ -24,10 +24,7 @@ It keeps Dolphin's file-management features while redesigning the window chrome:
 
 ![Dolphin Finder showing files in icon view](screenshot/screen1.png)
 
-The repository also includes the optional application icons used by the installer:
-
-- `Dolphin.png` — themed Dolphin icon.
-- `finder.png` — macOS Finder-style icon.
+The application icon is `src/Dolphin.png`.
 
 ## Project status
 
@@ -60,22 +57,21 @@ cd dolphin-finder
 ```
 
 The installer builds the application internally, installs it under the user's
-home directory, creates the **Dolphin Finder** application entry, and leaves
-the system Dolphin untouched by default.
+home directory and creates the **Dolphin Finder** application entry. It does
+not require or configure another file manager.
 
 It also records the installed repository commit. When run again from a newer
 checkout, it shows the installed and available commits and asks whether the
 application should be updated. Answer `n` to keep the current installation.
 
-During installation it asks for the application icon — themed `Dolphin.png`
-or macOS-style `finder.png` — and whether directory links should open with
-Dolphin Finder. The default answer for the file-manager question is **No**.
+During installation it asks whether directory links should open with Dolphin
+Finder. The default answer is **No**.
 
 Explicit choices are also supported:
 
 ```sh
-./install.sh --theme-icon --no-default
-./install.sh --macos-icon --default
+./install.sh --no-default
+./install.sh --default
 ```
 
 After installation, launch **Dolphin Finder** from the application menu or run
@@ -89,14 +85,9 @@ Run the included uninstaller from the repository:
 ./uninstall.sh
 ```
 
-It removes the user installation, launcher, icon and isolated profile. It does
-not remove the source repository or the system Dolphin. The script asks whether
-KDE Dolphin should be restored as the default directory handler. To restore it
-without prompting, use:
-
-```sh
-./uninstall.sh --restore-dolphin
-```
+It removes the user installation, launcher, icon and isolated profile without
+changing other applications. If Dolphin Finder was the default file manager,
+select a replacement in System Settings after uninstalling.
 
 ## Installation profile
 
@@ -106,9 +97,7 @@ The installer uses a separate user profile under:
 ~/.local/share/dolphin-finder
 ```
 
-The original `/usr/bin/dolphin` and its global configuration are not replaced
-by the project. Setting Dolphin Finder as the default file manager should be
-an explicit user decision.
+Setting Dolphin Finder as the default file manager is an explicit user decision.
 
 ## Upstream and licensing
 

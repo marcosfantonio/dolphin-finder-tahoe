@@ -1,10 +1,10 @@
 {
-    "id": "org.kde.dolphin",
+    "id": "org.kde.dolphin-finder",
     "branch": "master",
     "runtime": "org.kde.Platform",
     "runtime-version": "6.10",
     "sdk": "org.kde.Sdk",
-    "command": "dolphin",
+    "command": "dolphin-finder",
     "tags": [
         "nightly"
     ],
@@ -309,24 +309,13 @@
             "config-opts": [
                 "-DFLATPAK=ON"
             ],
-            "name": "dolphin",
+            "name": "dolphin-finder",
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "sources": [
                 {
                     "type": "dir",
                     "path": "."
-                }
-            ]
-        },
-        {
-            "name": "dolphin-plugins",
-            "buildsystem": "cmake-ninja",
-            "builddir": true,
-            "sources": [
-                {
-                    "type": "git",
-                    "url": "https://invent.kde.org/sdk/dolphin-plugins.git"
                 }
             ]
         }

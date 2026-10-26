@@ -99,6 +99,10 @@ cmake --install "$build_dir"
 rm -f "$prefix/share/dbus-1/services/org.kde.dolphin.FileManager1.service" \
     "$prefix/share/dbus-1/services/org.freedesktop.FileManager1.service" \
     "$prefix/lib/systemd/user/plasma-dolphin.service"
+# Migrate only this application's private prefix; never modify system entries.
+rm -f "$prefix/share/applications/org.kde.dolphin.desktop" \
+    "$prefix/share/metainfo/org.kde.dolphin.appdata.xml" \
+    "$prefix/share/icons/hicolor/scalable/apps/org.kde.dolphin.svg"
 mkdir -p "$prefix/share/dolphin-finder"
 printf '%s\n' "$current_commit" > "$prefix/share/dolphin-finder/installed-commit"
 
@@ -143,9 +147,10 @@ Type=Application
 Name=Dolphin Finder
 Comment=Finder-inspired KDE file manager
 Exec=$HOME/.local/bin/dolphin-finder %U
-Icon=org.kde.dolphin-finder
+Icon=$icon_dir/org.kde.dolphin-finder.png
 Terminal=false
 Categories=Qt;KDE;System;FileTools;FileManager;
+MimeType=inode/directory;
 StartupNotify=true
 StartupWMClass=dolphin-finder
 DBusActivatable=false
@@ -159,7 +164,22 @@ if [[ "$default_choice" == ask && -t 0 ]]; then
     [[ "$answer" =~ ^([yYsS]|[yYsS][eE][sS]|[yYsS][iI][mM])$ ]] && default_choice=yes || default_choice=no
 fi
 if [[ "$default_choice" == yes ]]; then
-    command -v xdg-mime &>/dev/null && xdg-mime default org.kde.dolphin-finder.desktop inode/directory
+    # The installer can be run from Finder's terminal, which inherits its isolated
+    # XDG_CONFIG_HOME. Write the association to the user's real desktop instead.
+    host_config="${DOLPHIN_FINDER_SYSTEM_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}}"
+    if ! command -v xdg-mime &>/dev/null; then
+        echo "xdg-mime is required to set the default file manager." >&2
+        exit 1
+    fi
+    if ! XDG_CONFIG_HOME="$host_config" XDG_DATA_HOME="$HOME/.local/share" \
+        xdg-mime default org.kde.dolphin-finder.desktop inode/directory; then
+        echo "Failed to set Dolphin Finder as the default directory handler." >&2
+        exit 1
+    fi
+    if [[ "$(XDG_CONFIG_HOME="$host_config" XDG_DATA_HOME="$HOME/.local/share" xdg-mime query default inode/directory)" != org.kde.dolphin-finder.desktop ]]; then
+        echo "Dolphin Finder was not registered as the default directory handler." >&2
+        exit 1
+    fi
     echo "Dolphin Finder is now the default directory handler."
 else
     echo "The current default file manager was preserved."

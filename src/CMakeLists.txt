@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-include(ECMAddAppIcon)
-
 set(ADMIN_WORKER_PACKAGE_NAME "kio-admin")
 set(FILELIGHT_PACKAGE_NAME "filelight")
 set(KFIND_PACKAGE_NAME "kfind")
@@ -184,7 +182,7 @@ target_sources(dolphinprivate PRIVATE
 ecm_qt_declare_logging_category(dolphinprivate
     HEADER dolphindebug.h
     IDENTIFIER DolphinDebug
-    CATEGORY_NAME org.kde.dolphin
+    CATEGORY_NAME org.kde.dolphin-finder
     DESCRIPTION "dolphin"
     EXPORT DOLPHIN
 )
@@ -522,19 +520,6 @@ if(FLATPAK)
     target_compile_definitions(dolphin PRIVATE FLATPAK)
 endif()
 
-# Install the icons on macOS and Windows
-ecm_add_app_icon(dolphin
-    ICONS
-        icons/128-apps-org.kde.dolphin.png
-        icons/16-apps-org.kde.dolphin.png
-        icons/22-apps-org.kde.dolphin.png
-        icons/32-apps-org.kde.dolphin.png
-        icons/48-apps-org.kde.dolphin.png
-        icons/64-apps-org.kde.dolphin.png
-)
-
-install(FILES icons/org.kde.dolphin.svg DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/scalable/apps)
-
 target_link_libraries(dolphin
     PRIVATE
     dolphinprivate
@@ -610,7 +595,7 @@ if(NOT WIN32)
     target_link_libraries(kcm_dolphinviewmodes dolphinprivate)
     target_link_libraries(kcm_dolphingeneral dolphinprivate)
 
-    install( FILES org.kde.dolphin.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR} )
+    install( FILES org.kde.dolphin-finder.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR} )
 
     install(TARGETS kcm_dolphinviewmodes DESTINATION ${KDE_INSTALL_PLUGINDIR}/dolphin/kcms )
     install(TARGETS kcm_dolphingeneral DESTINATION ${KDE_INSTALL_PLUGINDIR}/dolphin/kcms )

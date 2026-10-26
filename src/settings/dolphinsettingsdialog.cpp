@@ -26,6 +26,7 @@
 
 #include <kwidgetsaddons_version.h>
 
+#include <QApplication>
 #include <QCloseEvent>
 #include <QPushButton>
 
@@ -44,7 +45,7 @@ DolphinSettingsDialog::DolphinSettingsDialog(const QUrl &url, QWidget *parent, K
     // Interface
     InterfaceSettingsPage *interfaceSettingsPage = new InterfaceSettingsPage(this);
     KPageWidgetItem *interfaceSettingsFrame = addPage(interfaceSettingsPage, i18nc("@title:group Interface settings", "Interface"));
-    interfaceSettingsFrame->setIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin")));
+    interfaceSettingsFrame->setIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin-finder"), QApplication::windowIcon()));
     connect(interfaceSettingsPage, &InterfaceSettingsPage::changed, this, &DolphinSettingsDialog::enableApply);
 
     // View

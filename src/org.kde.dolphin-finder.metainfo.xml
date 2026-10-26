@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component type="desktop-application">
+  <id>org.kde.dolphin-finder</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0-or-later</project_license>
+  <developer id="io.github.marcosfantonio">
+    <name>fantonio</name>
+  </developer>
+  <name>Dolphin Finder</name>
+  <summary>Manage files with a Finder-inspired interface</summary>
+  <description>
+    <p>Dolphin Finder is an independent file manager with a Finder-inspired interface, tabs, split views and an integrated preview panel.</p>
+  </description>
+  <url type="homepage">https://github.com/marcosfantonio/dolphin-finder-tahoe</url>
+  <url type="bugtracker">https://github.com/marcosfantonio/dolphin-finder-tahoe/issues</url>
+  <launchable type="desktop-id">org.kde.dolphin-finder.desktop</launchable>
+  <provides>
+    <binary>dolphin-finder</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+</component>

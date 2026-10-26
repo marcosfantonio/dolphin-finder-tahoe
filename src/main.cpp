@@ -106,7 +106,9 @@ int main(int argc, char **argv)
                          i18nc("@title", "File Manager"),
                          KAboutLicense::GPL,
                          i18nc("@info:credit", "© 2006–2025 The Dolphin Developers"));
-    aboutData.setHomepage(QStringLiteral("https://apps.kde.org/dolphin"));
+    aboutData.setHomepage(QStringLiteral("https://github.com/marcosfantonio/dolphin-finder-tahoe"));
+    aboutData.setBugAddress("https://github.com/marcosfantonio/dolphin-finder-tahoe/issues");
+    aboutData.addAuthor(QStringLiteral("fantonio"), i18nc("@info:credit", "Dolphin Finder developer"));
     aboutData.addAuthor(i18nc("@info:credit", "Felix Ernst"),
                         i18nc("@info:credit", "Maintainer (since 2021) and developer"),
                         QStringLiteral("felixernst@kde.org"));
@@ -138,7 +140,7 @@ int main(int argc, char **argv)
     // KAboutData sets application metadata, so apply our desktop identity afterwards.
     app.setDesktopFileName(QStringLiteral("org.kde.dolphin-finder"));
     Q_INIT_RESOURCE(dolphin);
-    app.setWindowIcon(QIcon(QStringLiteral(":/dolphin-finder/Dolphin.png")));
+    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin-finder"), QIcon(QStringLiteral(":/dolphin-finder/Dolphin.png"))));
     KCrash::initialize();
 
     QCommandLineParser parser;

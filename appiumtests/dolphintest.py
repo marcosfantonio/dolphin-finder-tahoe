@@ -24,7 +24,7 @@ class DolphinTests(unittest.TestCase):
     def setUpClass(self):
         options = AppiumOptions()
         options.set_capability("timeouts", {'implicit': 10000})
-        options.set_capability("app", "org.kde.dolphin.desktop")
+        options.set_capability("app", "org.kde.dolphin-finder.desktop")
         options.set_capability("environ", {
             "LC_ALL": "en_US.UTF-8",
         })

@@ -51,7 +51,7 @@ void Dolphin::openNewWindow(const QList<QUrl> &urls, QWidget *window, const Open
     if (!urls.isEmpty()) {
         command.append(QLatin1String(" %U"));
     }
-    KService::Ptr service(new KService(QApplication::applicationDisplayName(), command, QApplication::windowIcon().name()));
+    KService::Ptr service(new KService(QApplication::applicationDisplayName(), command, QStringLiteral("org.kde.dolphin-finder")));
     auto *job = new KIO::ApplicationLauncherJob(service, window);
     job->setUrls(urls);
     job->setUiDelegate(new KDialogJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, window));

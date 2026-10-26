@@ -25,9 +25,8 @@ DolphinFeedbackProvider *DolphinFeedbackProvider::instance()
 DolphinFeedbackProvider::DolphinFeedbackProvider()
     : KUserFeedback::Provider()
 {
-    setProductIdentifier(QStringLiteral("org.kde.dolphin"));
-    setFeedbackServer(QUrl(QStringLiteral("https://telemetry.kde.org")));
-    setSubmissionInterval(7);
+    setProductIdentifier(QStringLiteral("org.kde.dolphin-finder"));
+    // No telemetry endpoint is configured for this application.
 
     addDataSource(new KUserFeedback::ApplicationVersionSource);
     addDataSource(new KUserFeedback::LocaleInfoSource);
