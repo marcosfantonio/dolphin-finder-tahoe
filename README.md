@@ -54,7 +54,7 @@ installer. Users do **not** need to configure or build the project manually.
 On CachyOS, clone the repository and run:
 
 ```sh
-git clone <repository-url> dolphin-finder
+git clone https://github.com/marcosfantonio/dolphin-finder-tahoe.git dolphin-finder
 cd dolphin-finder
 ./install.sh --install-deps
 ```
