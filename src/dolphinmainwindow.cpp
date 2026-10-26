@@ -1199,12 +1199,14 @@ void DolphinMainWindow::toggleFilterBar()
 void DolphinMainWindow::toggleEditLocation()
 {
     QAction *action = actionCollection()->action(QStringLiteral("editable_location"));
+    setFinderLocationVisible(this, action->isChecked());
     KUrlNavigator *urlNavigator = m_activeViewContainer->urlNavigator();
     urlNavigator->setUrlEditable(action->isChecked());
 }
 
 void DolphinMainWindow::replaceLocation()
 {
+    setFinderLocationVisible(this, true);
     KUrlNavigator *navigator = m_activeViewContainer->urlNavigator();
     QLineEdit *lineEdit = navigator->editor()->lineEdit();
 
@@ -1213,6 +1215,7 @@ void DolphinMainWindow::replaceLocation()
     // and goes back to the view, just like how it was before this action was triggered the first time.
     if (navigator->isUrlEditable() && lineEdit->hasFocus() && lineEdit->selectedText() == lineEdit->text()) {
         navigator->setUrlEditable(false);
+        setFinderLocationVisible(this, false);
         m_activeViewContainer->view()->setFocus();
     } else {
         navigator->setUrlEditable(true);

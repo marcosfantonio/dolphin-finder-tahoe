@@ -79,7 +79,7 @@ InformationPanelContent::InformationPanelContent(QWidget *parent)
     QFont font = m_nameLabel->font();
     font.setBold(true);
     m_nameLabel->setFont(font);
-    m_nameLabel->setAlignment(Qt::AlignHCenter);
+    m_nameLabel->setAlignment(Qt::AlignLeft);
     m_nameLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     m_nameLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_nameLabel->setFrameShape(QFrame::NoFrame);
@@ -438,7 +438,7 @@ void InformationPanelContent::setNameLabelText(const QString &text)
 
     m_nameLabel->setText(processedText);
     m_nameLabel->setFixedHeight(m_nameLabel->document()->size().height());
-    m_nameLabel->setAlignment(Qt::AlignHCenter);
+    m_nameLabel->setAlignment(Qt::AlignLeft);
 }
 
 void InformationPanelContent::adjustWidgetSizes(int width)

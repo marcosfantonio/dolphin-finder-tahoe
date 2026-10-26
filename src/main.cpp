@@ -13,6 +13,7 @@
 #include "dolphin_version.h"
 #include "dolphindebug.h"
 #include "dolphinmainwindow.h"
+#include "dolphinviewcontainer.h"
 #include "global.h"
 #if HAVE_KUSERFEEDBACK
 #include "userfeedback/dolphinfeedbackprovider.h"
@@ -22,6 +23,8 @@
 #include <KConfigGui>
 #include <KCrash>
 #include <KDBusService>
+#include <KFilePlacesModel>
+#include <KFilePlacesView>
 #include <KIO/PreviewJob>
 #include <KIconTheme>
 #include <KLocalizedString>
@@ -36,9 +39,12 @@
 #include <QCommandLineParser>
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
+#include <QDir>
+#include <QDockWidget>
+#include <QEventLoop>
+#include <QMouseEvent>
 #include <QSessionManager>
 #include <QTimer>
-#include <QDockWidget>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -76,7 +82,6 @@ int main(int argc, char **argv)
     KIconTheme::initTheme();
 
     QApplication app(argc, argv);
-    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin"), app.windowIcon()));
 
 #if HAVE_STYLE_MANAGER
     /**
@@ -96,7 +101,7 @@ int main(int argc, char **argv)
     KLocalizedString::setApplicationDomain(dolphinTranslationDomain);
 
     KAboutData aboutData(QStringLiteral("dolphin-finder"),
-                         i18n("Dolphin Finder — Teste"),
+                         i18n("Dolphin Finder"),
                          QStringLiteral(DOLPHIN_VERSION_STRING),
                          i18nc("@title", "File Manager"),
                          KAboutLicense::GPL,
@@ -130,6 +135,10 @@ int main(int argc, char **argv)
     aboutData.addAuthor(i18nc("@info:credit", "Michael Austin"), i18nc("@info:credit", "Documentation"), QStringLiteral("tuxedup@users.sourceforge.net"));
 
     KAboutData::setApplicationData(aboutData);
+    // KAboutData sets application metadata, so apply our desktop identity afterwards.
+    app.setDesktopFileName(QStringLiteral("org.kde.dolphin-finder"));
+    Q_INIT_RESOURCE(dolphin);
+    app.setWindowIcon(QIcon(QStringLiteral(":/dolphin-finder/Dolphin.png")));
     KCrash::initialize();
 
     QCommandLineParser parser;
@@ -317,6 +326,123 @@ int main(int argc, char **argv)
                 fail("expected three window controls");
                 return;
             }
+            // Exercise the real Places mouse event filter, not just its signals:
+            // replacing its default delegate breaks KFilePlacesEventWatcher's
+            // internal cast and crashes on the first click.
+            auto *placesView = places->findChild<KFilePlacesView *>();
+            if (!placesView) {
+                fail("missing Places view");
+                return;
+            }
+            int placesClicked = 0;
+            for (int row = 0; row < placesView->model()->rowCount() && placesClicked < 3; ++row) {
+                const auto index = placesView->model()->index(row, 0);
+                const auto url = index.data(KFilePlacesModel::UrlRole).toUrl();
+                if (!url.isLocalFile() || !QDir(url.toLocalFile()).exists())
+                    continue;
+                if (placesView->isRowHidden(row))
+                    continue;
+                const auto rect = placesView->visualRect(index);
+                // The lower half is the item body, below any section header.
+                const QPointF local(rect.left() + 30, rect.bottom() - 8);
+                if (!placesView->viewport()->rect().contains(local.toPoint()))
+                    continue;
+                const QPointF global = placesView->viewport()->mapToGlobal(local.toPoint());
+                QMouseEvent press(QEvent::MouseButtonPress, local, global, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+                QMouseEvent release(QEvent::MouseButtonRelease, local, global, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+                QApplication::sendEvent(placesView->viewport(), &press);
+                QApplication::sendEvent(placesView->viewport(), &release);
+                QEventLoop navigationReady;
+                QTimer::singleShot(200, &navigationReady, &QEventLoop::quit);
+                navigationReady.exec();
+                if (!mainWindow->activeViewContainer()->url().matches(url, QUrl::StripTrailingSlash)) {
+                    fail("sidebar click did not navigate to its directory");
+                    return;
+                }
+                ++placesClicked;
+            }
+            if (placesClicked == 0) {
+                fail("no sidebar entries exercised");
+                return;
+            }
+            for (const auto &name : {"finder_back",
+                                     "finder_forward",
+                                     "finder_icons",
+                                     "finder_details",
+                                     "finder_compact",
+                                     "finder_preview",
+                                     "finder_group",
+                                     "finder_share",
+                                     "finder_more",
+                                     "finderSearchButton"}) {
+                auto *button = toolbar->findChild<QToolButton *>(QLatin1String(name));
+                if (!button || button->icon().isNull()) {
+                    fail("missing Finder toolbar control or icon");
+                    return;
+                }
+            }
+            // Exercise live theme changes without changing the user's desktop settings.
+            const auto originalPalette = app.palette();
+            for (const bool dark : {false, true}) {
+                QPalette palette = originalPalette;
+                palette.setColor(QPalette::Window, dark ? QColor("#242424") : QColor("#f4f4f4"));
+                palette.setColor(QPalette::Base, dark ? QColor("#1e1e1e") : QColor("#ffffff"));
+                palette.setColor(QPalette::WindowText, dark ? Qt::white : Qt::black);
+                palette.setColor(QPalette::Text, dark ? Qt::white : Qt::black);
+                app.setPalette(palette);
+                auto *button = toolbar->findChild<QToolButton *>(QStringLiteral("finder_icons"));
+                const auto image = button->icon().pixmap(QSize(20, 20)).toImage();
+                bool visibleInk = false;
+                for (int y = 0; y < image.height(); ++y)
+                    for (int x = 0; x < image.width(); ++x) {
+                        const auto pixel = image.pixelColor(x, y);
+                        if (pixel.alpha() > 180 && (dark ? pixel.lightness() > 200 : pixel.lightness() < 55))
+                            visibleInk = true;
+                    }
+                if (!visibleInk) {
+                    fail("toolbar icons do not follow the system foreground");
+                    return;
+                }
+                const auto screenshot = qEnvironmentVariable("DOLPHIN_FINDER_TEST_SCREENSHOT");
+                if (!screenshot.isEmpty())
+                    mainWindow->grab().save(screenshot + (dark ? QStringLiteral("-dark.png") : QStringLiteral("-light.png")));
+                auto *preview = toolbar->findChild<QToolButton *>(QStringLiteral("finder_preview"));
+                auto *info = content->findChild<QDockWidget *>(QStringLiteral("infoDock"));
+#if HAVE_BALOO
+                if (!info || !preview->isEnabled()) {
+                    fail("preview panel or its action is unavailable");
+                    return;
+                }
+#endif
+                if (info && preview->isEnabled()) {
+                    const bool wasVisible = info->isVisible();
+                    if (!wasVisible)
+                        preview->click();
+                    if (!info->isVisible() || info->parentWidget() != content) {
+                        fail("preview panel is not inside the content column");
+                        return;
+                    }
+                    QEventLoop previewReady;
+                    QTimer::singleShot(500, &previewReady, &QEventLoop::quit);
+                    previewReady.exec();
+                    if (!screenshot.isEmpty())
+                        mainWindow->grab().save(screenshot + (dark ? QStringLiteral("-preview-dark.png") : QStringLiteral("-preview-light.png")));
+                    if (!wasVisible)
+                        preview->click();
+                }
+            }
+            app.setPalette(originalPalette);
+            auto *folderTitle = toolbar->findChild<QWidget *>(QStringLiteral("finderFolderTitle"));
+            QMetaObject::invokeMethod(mainWindow, "replaceLocation", Qt::DirectConnection);
+            app.processEvents();
+            if (folderTitle && folderTitle->isVisible()) {
+                QMetaObject::invokeMethod(mainWindow, "replaceLocation", Qt::DirectConnection);
+                app.processEvents();
+            }
+            if (!folderTitle || folderTitle->isVisible()) {
+                fail("editable location did not replace the folder title");
+                return;
+            }
             const bool wasSplit = mainWindow->isSplitViewEnabledInCurrentTab();
             QMetaObject::invokeMethod(mainWindow, "toggleSplitView", Qt::DirectConnection);
             if (mainWindow->isSplitViewEnabledInCurrentTab() == wasSplit) {
@@ -334,7 +460,7 @@ int main(int argc, char **argv)
             buttons[0]->click();
             if (mainWindow->isVisible()) { fail("close failed"); return; }
             delete mainWindow;
-            qInfo("Finder self-test: layout, split view, maximize, restore, minimize and close passed");
+            qInfo("Finder self-test: sidebar mouse navigation, toolbar, light/dark contrast, preview, location editing, split view and window controls passed");
             app.exit(0);
         });
     }

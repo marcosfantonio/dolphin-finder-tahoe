@@ -16,7 +16,13 @@ It keeps Dolphin's file-management features while redesigning the window chrome:
 
 ## Showcase
 
-![Dolphin Finder running on KDE Plasma](screenshot.png)
+### Details view with Finder-style preview
+
+![Dolphin Finder with the preview panel enabled](screenshot/screen2.png)
+
+### Icon view with the Places sidebar
+
+![Dolphin Finder showing files in icon view](screenshot/screen1.png)
 
 The repository also includes the optional application icons used by the installer:
 

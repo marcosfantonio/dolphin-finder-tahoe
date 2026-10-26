@@ -6,9 +6,10 @@
 
 #include "dolphindockwidget.h"
 
+#include <QApplication>
 #include <QEvent>
-#include <QStyle>
 #include <QPainter>
+#include <QStyle>
 
 namespace
 {
@@ -58,8 +59,10 @@ void DolphinDockWidget::paintEvent(QPaintEvent *event)
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(36, 36, 42, 140));
-        painter.drawRoundedRect(rect(), 18, 18);
+        QColor background = qApp->palette().color(QPalette::Window);
+        background.setAlpha(140);
+        painter.setBrush(background);
+        painter.drawRoundedRect(rect(), 14, 14);
     } else {
         QDockWidget::paintEvent(event);
     }

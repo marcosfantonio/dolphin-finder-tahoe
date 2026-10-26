@@ -510,6 +510,7 @@ if (HAVE_KUSERFEEDBACK)
 endif()
 
 add_executable(dolphin)
+set_target_properties(dolphin PROPERTIES OUTPUT_NAME dolphin-finder)
 
 target_sources(dolphin PRIVATE
     dbusinterface.cpp
@@ -622,12 +623,13 @@ endif()
 
 ########### install files ###############
 
-install( PROGRAMS org.kde.dolphin.desktop DESTINATION ${KDE_INSTALL_APPDIR} )
+install( PROGRAMS org.kde.dolphin-finder.desktop DESTINATION ${KDE_INSTALL_APPDIR} )
+install(FILES Dolphin.png DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/512x512/apps RENAME org.kde.dolphin-finder.png)
 
 install( DIRECTORY DESTINATION "${KDE_INSTALL_FULL_DATAROOTDIR}/kglobalaccel" )
 
 install(
-    CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${KDE_INSTALL_FULL_APPDIR}/org.kde.dolphin.desktop\" \"\$ENV{DESTDIR}${KDE_INSTALL_FULL_DATAROOTDIR}/kglobalaccel/org.kde.dolphin.desktop\")"
+    CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${KDE_INSTALL_FULL_APPDIR}/org.kde.dolphin-finder.desktop\" \"\$ENV{DESTDIR}${KDE_INSTALL_FULL_DATAROOTDIR}/kglobalaccel/org.kde.dolphin-finder.desktop\")"
 )
 
 install( FILES settings/dolphin_directoryviewpropertysettings.kcfg

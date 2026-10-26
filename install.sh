@@ -15,14 +15,11 @@ EOF
 
 install_deps=false
 default_choice="ask"
-icon_choice="ask"
 for arg in "$@"; do
     case "$arg" in
         --install-deps) install_deps=true ;;
         --default) default_choice=yes ;;
         --no-default) default_choice=no ;;
-        --theme-icon) icon_choice=theme ;;
-        --macos-icon) icon_choice=macos ;;
         -h|--help)
             cat <<'EOF'
 Usage: ./install.sh [options]
@@ -30,8 +27,6 @@ Usage: ./install.sh [options]
   --install-deps  Install missing CachyOS/Arch dependencies with pacman.
   --default       Make Dolphin Finder the default directory handler.
   --no-default    Keep the current default file manager.
-  --theme-icon    Use Dolphin.png.
-  --macos-icon    Use finder.png.
 EOF
             exit 0
             ;;
@@ -93,19 +88,17 @@ if [[ -n "$installed_commit" && "$installed_commit" != "$current_commit" && "$cu
     fi
 fi
 
-if [[ "$icon_choice" == ask && -t 0 ]]; then
-    printf '\nChoose the application icon:\n  [1] Themed Dolphin icon\n  [2] macOS Finder icon\nChoice [1/2] (default: 1): '
-    read -r answer
-    [[ "$answer" == 2 ]] && icon_choice=macos || icon_choice=theme
-elif [[ "$icon_choice" == ask ]]; then
-    icon_choice=theme
-fi
-
 cmake -S "$repo_dir" -B "$build_dir" -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=OFF \
+    -DKDE_INSTALL_USE_QT_SYS_PATHS=OFF \
+    -DKDE_INSTALL_PLUGINDIR=lib/plugins -DKDE_INSTALL_QMLDIR=lib/qml \
     -DCMAKE_INSTALL_PREFIX="$prefix"
 cmake --build "$build_dir" --parallel "${JOBS:-2}"
 cmake --install "$build_dir"
+# Remove legacy generic FileManager1 activation files from earlier installs.
+rm -f "$prefix/share/dbus-1/services/org.kde.dolphin.FileManager1.service" \
+    "$prefix/share/dbus-1/services/org.freedesktop.FileManager1.service" \
+    "$prefix/lib/systemd/user/plasma-dolphin.service"
 mkdir -p "$prefix/share/dolphin-finder"
 printf '%s\n' "$current_commit" > "$prefix/share/dolphin-finder/installed-commit"
 
@@ -114,13 +107,7 @@ icon_dir="$HOME/.local/share/icons/hicolor/512x512/apps"
 mkdir -p "$profile/config" "$profile/data" "$profile/cache" "$profile/state" \
     "$HOME/.local/bin" "$HOME/.local/share/applications" "$icon_dir"
 
-if [[ "$icon_choice" == macos ]]; then
-    icon_source="$repo_dir/finder.png"
-    icon_label="macOS Finder"
-else
-    icon_source="$repo_dir/Dolphin.png"
-    icon_label="themed Dolphin"
-fi
+icon_source="$repo_dir/src/Dolphin.png"
 cp -f "$icon_source" "$icon_dir/org.kde.dolphin-finder.png"
 
 if [[ ! -e "$profile/config/kdeglobals" && -f "$HOME/.config/kdeglobals" ]]; then
@@ -138,6 +125,7 @@ cat > "$HOME/.local/bin/dolphin-finder" <<EOF
 set -euo pipefail
 prefix="$prefix"
 profile="\${DOLPHIN_FINDER_PROFILE:-\$HOME/.local/share/dolphin-finder}"
+export DOLPHIN_FINDER_SYSTEM_CONFIG_HOME="\${DOLPHIN_FINDER_SYSTEM_CONFIG_HOME:-\${XDG_CONFIG_HOME:-\$HOME/.config}}"
 export XDG_CONFIG_HOME="\$profile/config"
 export XDG_DATA_HOME="\$profile/data"
 export XDG_CACHE_HOME="\$profile/cache"
@@ -145,7 +133,7 @@ export XDG_STATE_HOME="\$profile/state"
 export XDG_DATA_DIRS="\$HOME/.local/share:\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export QT_PLUGIN_PATH="\$prefix/lib/plugins:\${QT_PLUGIN_PATH:-}"
 export QML2_IMPORT_PATH="\$prefix/lib/qml:\${QML2_IMPORT_PATH:-}"
-exec "\$prefix/bin/dolphin" --new-window "\$@"
+exec "\$prefix/bin/dolphin-finder" --new-window "\$@"
 EOF
 chmod +x "$HOME/.local/bin/dolphin-finder"
 
@@ -159,7 +147,8 @@ Icon=org.kde.dolphin-finder
 Terminal=false
 Categories=Qt;KDE;System;FileTools;FileManager;
 StartupNotify=true
-StartupWMClass=org.kde.dolphin-finder
+StartupWMClass=dolphin-finder
+DBusActivatable=false
 EOF
 
 command -v update-desktop-database &>/dev/null && update-desktop-database "$HOME/.local/share/applications" || true
@@ -175,4 +164,4 @@ if [[ "$default_choice" == yes ]]; then
 else
     echo "The current default file manager was preserved."
 fi
-printf '\nInstalled Dolphin Finder with the %s icon.\n' "$icon_label"
+printf '\nInstalled Dolphin Finder with the Dolphin Finder icon.\n'

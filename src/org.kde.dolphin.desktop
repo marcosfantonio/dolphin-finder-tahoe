@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Dolphin
+Name=Dolphin Finder
 Name[ar]=دولفين
 Name[ast]=Dolphin
 Name[az]=Dolphin
@@ -62,8 +62,8 @@ Name[uk]=Dolphin
 Name[vi]=Dolphin
 Name[zh_CN]=Dolphin 文件管理器
 Name[zh_TW]=Dolphin
-Exec=dolphin %u
-Icon=org.kde.dolphin
+Exec=dolphin-finder %u
+Icon=org.kde.dolphin-finder
 Type=Application
 X-DocPath=dolphin/index.html
 Categories=Qt;KDE;System;FileTools;FileManager;

@@ -202,25 +202,6 @@ install(FILES
     COMPONENT Devel
 )
 
-if(FLATPAK)
-    ecm_generate_dbus_service_file(
-        NAME org.freedesktop.FileManager1
-        EXECUTABLE "${KDE_INSTALL_FULL_BINDIR}/dolphin --daemon"
-        SYSTEMD_SERVICE plasma-dolphin.service
-        DESTINATION ${KDE_INSTALL_DBUSSERVICEDIR}
-    )
-else()
-    ecm_generate_dbus_service_file(
-        NAME org.freedesktop.FileManager1
-        EXECUTABLE "${KDE_INSTALL_FULL_BINDIR}/dolphin --daemon"
-        SYSTEMD_SERVICE plasma-dolphin.service
-        DESTINATION ${KDE_INSTALL_DBUSSERVICEDIR}
-        RENAME org.kde.dolphin.FileManager1.service
-    )
-endif()
-
-ecm_install_configured_files(INPUT plasma-dolphin.service.in DESTINATION ${KDE_INSTALL_SYSTEMDUSERUNITDIR})
-
 ecm_qt_install_logging_categories(
         EXPORT DOLPHIN
         FILE dolphin.categories

@@ -1060,7 +1060,7 @@ void DolphinView::stopLoading()
 
 void DolphinView::updatePalette()
 {
-    QColor color = KColorScheme(isActiveWindow() ? QPalette::Active : QPalette::Inactive, KColorScheme::View).background().color();
+    QColor color = palette().color(isActiveWindow() ? QPalette::Active : QPalette::Inactive, QPalette::Base);
     if (!m_active) {
         color.setAlpha(150);
     }

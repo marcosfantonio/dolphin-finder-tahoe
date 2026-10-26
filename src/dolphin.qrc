@@ -1,4 +1,7 @@
 <RCC>
+<qresource prefix="/dolphin-finder">
+<file>Dolphin.png</file>
+</qresource>
 <qresource prefix="/kxmlgui5/dolphin">
 <file>dolphinui.rc</file>
 <file>dolphinuiforphones.rc</file>

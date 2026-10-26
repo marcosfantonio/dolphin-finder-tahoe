@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Dolphin Finder
+Comment=Finder-inspired KDE file manager
+Exec=dolphin-finder %U
+Icon=org.kde.dolphin-finder
+Terminal=false
+Categories=Qt;KDE;System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupNotify=true
+StartupWMClass=dolphin-finder
+DBusActivatable=false

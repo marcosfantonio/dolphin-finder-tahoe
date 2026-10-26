@@ -6,3 +6,4 @@ class QDockWidget;
 class QToolBar;
 
 void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *toolbar);
+void setFinderLocationVisible(QMainWindow *window, bool visible);
