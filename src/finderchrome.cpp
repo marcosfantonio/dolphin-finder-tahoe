@@ -27,6 +27,7 @@
 #include <QDockWidget>
 #include <QEnterEvent>
 #include <QFileSystemWatcher>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QIconEngine>
 #include <QInputDialog>
@@ -299,7 +300,8 @@ private:
                 "QDockWidget#placesDock { background: %1; border-radius: 14px; color: %2; }"
                 "QDockWidget#placesDock QAbstractItemView { background: transparent; border: none; padding: 4px; }"
                 "QDockWidget#placesDock QAbstractItemView::item:selected { background: %3; color: %4; border-radius: 5px; }"
-                "QMainWindow#finderContent { background: %5; border-top-right-radius: 14px; border-bottom-right-radius: 14px; }"
+                "QMainWindow#finderContent { background: %5; border: none; border-top-right-radius: 14px; border-bottom-right-radius: 14px; }"
+                "DolphinView KItemListContainer, DolphinView QGraphicsView { border: none; }"
                 "QToolBar#mainToolBar { background: transparent; border: none; spacing: 8px; padding: 4px 8px; }"
                 "QWidget#finderCapsule { background: %6; border: 1px solid %7; border-radius: 16px; }"
                 "QWidget#finderCapsule QToolButton, QToolButton#finderSearchButton { background: transparent; border: none; border-radius: 13px; padding: 0; }"
@@ -426,13 +428,23 @@ void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *too
     toolbar->setFixedHeight(52);
     toolbar->clear();
 
-    auto capsule = [toolbar]() {
+    const auto addShadow = [](QWidget *widget, qreal blur, qreal offset, int alpha) {
+        auto *shadow = new QGraphicsDropShadowEffect(widget);
+        shadow->setBlurRadius(blur);
+        shadow->setOffset(0, offset);
+        shadow->setColor(QColor(0, 0, 0, alpha));
+        widget->setGraphicsEffect(shadow);
+    };
+    addShadow(toolbar, 12, 2, 35);
+
+    auto capsule = [toolbar, addShadow]() {
         auto *group = new QWidget(toolbar);
         group->setObjectName(QStringLiteral("finderCapsule"));
         auto *layout = new QHBoxLayout(group);
         layout->setContentsMargins(3, 2, 3, 2);
         layout->setSpacing(0);
         group->setFixedHeight(32);
+        addShadow(group, 8, 2, 45);
         toolbar->addWidget(group);
         return group;
     };
@@ -573,6 +585,7 @@ void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *too
     search->setDefaultAction(actions->action(QStringLiteral("toggle_search")));
     search->defaultAction()->setIcon(finderIcon(QStringLiteral("search")));
     search->setFixedSize(30, 30);
+    addShadow(search, 8, 2, 45);
     toolbar->addWidget(search);
 
     content->addToolBar(toolbar);

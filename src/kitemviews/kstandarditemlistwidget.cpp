@@ -692,7 +692,8 @@ QFont KStandardItemListWidget::customizedFont(const QFont &baseFont) const
 
 bool KStandardItemListWidget::usesTranslucentSelection() const
 {
-    return style()->name() == QStringLiteral("breeze");
+    // KItemListWidget paints a translucent selection for every widget style.
+    return true;
 }
 
 QPalette::ColorRole KStandardItemListWidget::normalTextColorRole() const

@@ -86,6 +86,8 @@
 #include <QFileInfo>
 #include <QLineEdit>
 #include <QMenuBar>
+#include <QPainter>
+#include <QPainterPath>
 #include <QPushButton>
 #include <QSharedPointer>
 #include <QShowEvent>
@@ -112,6 +114,27 @@ const int CurrentDolphinVersion = 202;
 const int MaxNumberOfNavigationentries = 12;
 // The maximum number of "Go to Tab" shortcuts
 const int MaxActivateTabShortcuts = 9;
+}
+
+void DolphinMainWindow::paintEvent(QPaintEvent *event)
+{
+    KXmlGuiWindow::paintEvent(event);
+
+    QPainterPath frame;
+    frame.addRoundedRect(QRectF(rect()), 20, 20);
+    if (auto *places = findChild<QDockWidget *>(QStringLiteral("placesDock")); places && places->isVisible() && !places->isFloating()) {
+        QPainterPath sidebar;
+        sidebar.addRoundedRect(QRectF(QPointF(places->mapTo(this, QPoint())), QSizeF(places->size())), 14, 14);
+        frame = frame.subtracted(sidebar);
+    }
+
+    // The window stylesheet sets its background to transparent to preserve the
+    // sidebar translucency, so its widget palette is not the desktop palette.
+    QColor background = qApp->palette().color(QPalette::Window);
+    background.setAlpha(255);
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.fillPath(frame, background);
 }
 
 DolphinMainWindow::DolphinMainWindow()

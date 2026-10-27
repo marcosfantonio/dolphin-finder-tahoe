@@ -268,6 +268,9 @@ Q_SIGNALS:
     void settingsChanged();
 
 protected:
+    /** Paints the opaque window frame, leaving only the Places sidebar translucent. */
+    void paintEvent(QPaintEvent *event) override;
+
     /** @see QObject::event() */
     bool event(QEvent *event) override;
 

@@ -639,7 +639,9 @@ void KItemListWidget::drawItemStyleOption(QPainter *painter, QWidget *widget, QS
 
     // TODO: Remove this check after Plasma 6.8 release
     // See: https://invent.kde.org/plasma/breeze/-/merge_requests/595
-    if (style()->name() == QStringLiteral("breeze")) {
+    // Keep selection visible even with styles that omit or barely tint it in
+    // light themes. Selected items use the same translucent treatment as Breeze.
+    if (style()->name() == QStringLiteral("breeze") || m_selected) {
         QColor backgroundColor{widget->palette().color(QPalette::Highlight)};
         backgroundColor.setAlphaF(0.0);
         if (m_clickHighlighted) {
@@ -662,8 +664,8 @@ void KItemListWidget::drawItemStyleOption(QPainter *painter, QWidget *widget, QS
         path.addRoundedRect(selectionRectFull().adjusted(adjustment, adjustment, -adjustment, -adjustment), roundness, roundness);
         painter->fillPath(path, backgroundColor);
 
-        // Focus decoration
-        if (current) {
+        // Outline every selected item, not only the keyboard-current item.
+        if (current || m_selected) {
             QColor focusColor{widget->palette().color(QPalette::Highlight)};
             // Set the pen color lighter or darker depending on background color
             focusColor = m_styleOption.palette.color(QPalette::Base).lightnessF() > 0.5 ? focusColor.darker(110) : focusColor.lighter(110);
