@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "finderchrome.h"
+#include "finderpopupstyle.h"
 
 #include "config-dolphin.h"
 #include "dolphin_generalsettings.h"
@@ -39,8 +40,10 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QScopedValueRollback>
+#include <QStandardPaths>
 #include <QStyle>
 #include <QStyleOptionViewItem>
+#include <QSvgRenderer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QWindow>
@@ -197,17 +200,55 @@ private:
     QAbstractItemDelegate *m_original;
 };
 
-class TrafficLightButton : public QToolButton
+class SystemWindowButton : public QToolButton
 {
 public:
-    TrafficLightButton(int kind, const QColor &color, QWidget *parent)
+    SystemWindowButton(int kind, QWidget *parent)
         : QToolButton(parent)
         , m_kind(kind)
-        , m_color(color)
     {
+        const auto configHome = qEnvironmentVariable("DOLPHIN_FINDER_SYSTEM_CONFIG_HOME", QDir::homePath() + QStringLiteral("/.config"));
+        const auto configPath = configHome + QStringLiteral("/kwinrc");
+        auto *watcher = new QFileSystemWatcher(this);
+        watcher->addPaths({configHome, configPath});
+        const auto reload = [this, watcher, configPath] {
+            if (!watcher->files().contains(configPath))
+                watcher->addPath(configPath);
+            const auto config = KSharedConfig::openConfig(configPath, KConfig::SimpleConfig);
+            config->reparseConfiguration();
+            const KConfigGroup decoration(config, QStringLiteral("org.kde.kdecoration2"));
+            const QString theme = decoration.readEntry("theme", QString());
+            const QString prefix = QStringLiteral("__aurorae__svg__");
+            m_themePath.clear();
+            if (decoration.readEntry("library", QString()) == QLatin1String("org.kde.kwin.aurorae") && theme.startsWith(prefix)) {
+                m_themePath = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
+                                                     QStringLiteral("aurorae/themes/") + theme.mid(prefix.size()),
+                                                     QStandardPaths::LocateDirectory);
+            }
+            m_asset.clear();
+            setFixedSize(16, 16);
+            if (!m_themePath.isEmpty()) {
+                const QString name = theme.mid(prefix.size());
+                const auto themeConfig = KSharedConfig::openConfig(m_themePath + QLatin1Char('/') + name + QStringLiteral("rc"), KConfig::SimpleConfig);
+                const KConfigGroup layout(themeConfig, QStringLiteral("Layout"));
+                setFixedSize(qBound(12, layout.readEntry("ButtonWidth", 16), 32), qBound(12, layout.readEntry("ButtonHeight", 16), 32));
+            }
+            update();
+        };
+        connect(watcher, &QFileSystemWatcher::fileChanged, this, reload);
+        connect(watcher, &QFileSystemWatcher::directoryChanged, this, reload);
+        window()->installEventFilter(this);
+        reload();
     }
 
 protected:
+    bool eventFilter(QObject *object, QEvent *event) override
+    {
+        if (object == window() && (event->type() == QEvent::ActivationChange || event->type() == QEvent::WindowStateChange))
+            update();
+        return QToolButton::eventFilter(object, event);
+    }
+
     void enterEvent(QEnterEvent *event) override
     {
         QToolButton::enterEvent(event);
@@ -221,26 +262,40 @@ protected:
     void paintEvent(QPaintEvent *) override
     {
         QPainter p(this);
-        p.setRenderHint(QPainter::Antialiasing);
-        p.setPen(Qt::NoPen);
-        p.setBrush(isDown() ? m_color.darker(120) : m_color);
-        p.drawEllipse(QRectF(1, 1, 12, 12));
-        if (!underMouse()) return;
-        p.setPen(QPen(m_color.darker(290), 1.2, Qt::SolidLine, Qt::RoundCap));
-        if (m_kind == 0) {
-            p.drawLine(QPointF(4.5, 4.5), QPointF(9.5, 9.5));
-            p.drawLine(QPointF(9.5, 4.5), QPointF(4.5, 9.5));
-        } else if (m_kind == 1) {
-            p.drawLine(QPointF(4, 7), QPointF(10, 7));
-        } else {
-            p.drawLine(QPointF(4, 10), QPointF(10, 4));
-            p.drawLine(QPointF(6, 4), QPointF(10, 4));
-            p.drawLine(QPointF(10, 4), QPointF(10, 8));
+        const bool maximized = window()->isMaximized();
+        const QString asset = m_kind == 0 ? QStringLiteral("close")
+            : m_kind == 1                 ? QStringLiteral("minimize")
+            : maximized                   ? QStringLiteral("restore")
+                                          : QStringLiteral("maximize");
+        if (!m_themePath.isEmpty()) {
+            if (m_asset != asset) {
+                m_renderer.load(m_themePath + QLatin1Char('/') + asset + QStringLiteral(".svg"));
+                m_asset = asset;
+            }
+            const bool active = window()->isActiveWindow();
+            QString state = active ? QStringLiteral("active-center") : QStringLiteral("inactive-center");
+            if (isDown())
+                state = active ? QStringLiteral("pressed-center") : QStringLiteral("pressed-inactive-center");
+            else if (underMouse())
+                state = active ? QStringLiteral("hover-center") : QStringLiteral("hover-inactive-center");
+            if (!m_renderer.elementExists(state))
+                state = active ? QStringLiteral("active-center") : QStringLiteral("inactive-center");
+            if (m_renderer.isValid() && m_renderer.elementExists(state)) {
+                m_renderer.render(&p, state, QRectF(rect()));
+                return;
+            }
         }
+        const auto icon = m_kind == 0 ? QStyle::SP_TitleBarCloseButton
+            : m_kind == 1             ? QStyle::SP_TitleBarMinButton
+            : maximized               ? QStyle::SP_TitleBarNormalButton
+                                      : QStyle::SP_TitleBarMaxButton;
+        style()->standardIcon(icon, nullptr, this).paint(&p, rect(), Qt::AlignCenter, isEnabled() ? QIcon::Normal : QIcon::Disabled);
     }
 private:
     int m_kind;
-    QColor m_color;
+    QString m_themePath;
+    QString m_asset;
+    QSvgRenderer m_renderer;
 };
 
 class FinderAppearance : public QObject
@@ -278,10 +333,27 @@ protected:
     {
         if ((object == qApp && event->type() == QEvent::ApplicationPaletteChange) || (object == m_window && event->type() == QEvent::PaletteChange))
             apply();
+        if (event->type() == QEvent::Polish || event->type() == QEvent::Show) {
+            if (auto *popup = qobject_cast<QWidget *>(object); popup && (popup->windowType() == Qt::Popup || popup->windowType() == Qt::ToolTip)) {
+                applyPopup(popup);
+                if (event->type() == QEvent::Show && popup->windowHandle())
+                    KWindowEffects::enableBlurBehind(popup->windowHandle(), true);
+            }
+        }
         return false;
     }
 
 private:
+    void applyPopup(QWidget *popup)
+    {
+        // Popups are separate windows and can otherwise retain the style's
+        // dark palette, especially with Kvantum and the isolated app profile.
+        if (qobject_cast<QMenu *>(popup) || popup->windowType() == Qt::ToolTip)
+            applyFinderPopupStyle(popup, qApp->palette());
+        else
+            popup->setPalette(qApp->palette());
+    }
+
     void apply()
     {
         if (m_applying)
@@ -302,6 +374,15 @@ private:
                 "QDockWidget#placesDock QAbstractItemView::item:selected { background: %3; color: %4; border-radius: 5px; }"
                 "QMainWindow#finderContent { background: %5; border: none; border-top-right-radius: 14px; border-bottom-right-radius: 14px; }"
                 "DolphinView KItemListContainer, DolphinView QGraphicsView { border: none; }"
+                "DolphinView KItemListContainer QScrollBar:vertical { background: transparent; width: 22px; margin: 6px 6px; border: none; }"
+                "DolphinView KItemListContainer QScrollBar::handle:vertical { background: #b8b8b8; border: 1px solid rgba(0,0,0,65); min-height: 28px; "
+                "border-radius: 5px; }"
+                "DolphinView KItemListContainer QScrollBar::handle:vertical:hover { background: #a6a6a6; }"
+                "DolphinView KItemListContainer QScrollBar::handle:vertical:pressed { background: #949494; }"
+                "DolphinView KItemListContainer QScrollBar::add-line:vertical, DolphinView KItemListContainer QScrollBar::sub-line:vertical { height: 0px; "
+                "border: none; background: transparent; }"
+                "DolphinView KItemListContainer QScrollBar::add-page:vertical, DolphinView KItemListContainer QScrollBar::sub-page:vertical { background: "
+                "transparent; }"
                 "QToolBar#mainToolBar { background: transparent; border: none; spacing: 8px; padding: 4px 8px; }"
                 "QWidget#finderCapsule { background: %6; border: 1px solid %7; border-radius: 16px; }"
                 "QWidget#finderCapsule QToolButton, QToolButton#finderSearchButton { background: transparent; border: none; border-radius: 13px; padding: 0; }"
@@ -321,6 +402,10 @@ private:
                      rgba(foreground, 35));
         if (m_window->styleSheet() != css)
             m_window->setStyleSheet(css);
+        for (auto *widget : QApplication::topLevelWidgets()) {
+            if (widget->isVisible() && (widget->windowType() == Qt::Popup || widget->windowType() == Qt::ToolTip))
+                applyPopup(widget);
+        }
         m_window->update();
     }
     QMainWindow *m_window;
@@ -631,11 +716,9 @@ void installFinderChrome(QMainWindow *window, QDockWidget *places, QToolBar *too
     auto *buttons = new QHBoxLayout(header);
     buttons->setContentsMargins(14, 0, 12, 0);
     buttons->setSpacing(7);
-    const QStringList colors{QStringLiteral("#ff5f57"), QStringLiteral("#febc2e"), QStringLiteral("#28c840")};
     const QStringList labels{i18n("Close"), i18n("Minimize"), i18n("Maximize / restore")};
     for (int i = 0; i < 3; ++i) {
-        auto *button = new TrafficLightButton(i, QColor(colors[i]), header);
-        button->setFixedSize(14, 14);
+        auto *button = new SystemWindowButton(i, header);
         button->setToolTip(labels[i]);
         button->setAccessibleName(labels[i]);
         QObject::connect(button, &QToolButton::clicked, window, [window, i] {

@@ -16,12 +16,112 @@
 #include "accessibility/kitemlistviewaccessible.h"
 #endif
 #include <QApplication>
+#include <QCursor>
+#include <QEasingCurve>
 #include <QFontMetrics>
+#include <QGraphicsDropShadowEffect>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QPainter>
 #include <QScrollBar>
 #include <QScroller>
 #include <QStyleOption>
+#include <QTimer>
+#include <QVariantAnimation>
+
+namespace
+{
+// Hide only the painting, not the scrollbar widget: changing its visibility
+// would resize the file view and interfere with wheel scrolling and layout.
+class FinderScrollBar : public QScrollBar
+{
+public:
+    explicit FinderScrollBar(QAbstractScrollArea *area)
+        : QScrollBar(Qt::Vertical, area)
+        , m_area(area)
+    {
+        auto *shadow = new QGraphicsDropShadowEffect(this);
+        shadow->setBlurRadius(10);
+        shadow->setOffset(0, 2);
+        shadow->setColor(QColor(0, 0, 0, 95));
+        setGraphicsEffect(shadow);
+        m_fade.setDuration(240);
+        m_fade.setEasingCurve(QEasingCurve::OutCubic);
+        connect(&m_fade, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+            m_progress = value.toReal();
+            update();
+        });
+        connect(this, &QScrollBar::sliderPressed, this, [this] {
+            setRevealed(true);
+        });
+        connect(this, &QScrollBar::sliderReleased, this, [this] {
+            updateHover();
+        });
+        area->setMouseTracking(true);
+        area->viewport()->setMouseTracking(true);
+        if (auto *view = qobject_cast<QGraphicsView *>(area->viewport()))
+            view->viewport()->setMouseTracking(true);
+        qApp->installEventFilter(this);
+    }
+
+protected:
+    bool eventFilter(QObject *object, QEvent *event) override
+    {
+        if (event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove || event->type() == QEvent::Enter || event->type() == QEvent::Leave
+            || event->type() == QEvent::WindowDeactivate) {
+            if (auto *widget = qobject_cast<QWidget *>(object); widget && widget->window() == m_area->window())
+                updateHover();
+        }
+        if (object == m_area && event->type() == QEvent::Hide)
+            setRevealed(false);
+        return QScrollBar::eventFilter(object, event);
+    }
+
+    void paintEvent(QPaintEvent *) override
+    {
+        if (m_progress <= 0)
+            return;
+        QStyleOptionSlider option;
+        initStyleOption(&option);
+        // initStyleOption() leaves subControls empty; QScrollBar's own paint
+        // event normally populates them. Without this the style draws nothing.
+        option.subControls = QStyle::SC_All;
+        if (isSliderDown() || underMouse())
+            option.activeSubControls = QStyle::SC_ScrollBarSlider;
+        QPainter painter(this);
+        // Slide the painting, not the widget: keep the file layout and the
+        // scrollbar's mouse target stable while it emerges from the right edge.
+        painter.translate((1.0 - m_progress) * width(), 0);
+        painter.setOpacity(m_progress);
+        style()->drawComplexControl(QStyle::CC_ScrollBar, &option, &painter, this);
+    }
+
+private:
+    void updateHover()
+    {
+        const QPoint pos = m_area->mapFromGlobal(QCursor::pos());
+        const bool atRightEdge = m_area->rect().contains(pos) && pos.x() >= m_area->width() - 18;
+        setRevealed(isSliderDown() || (m_area->isVisible() && m_area->window()->isActiveWindow() && atRightEdge));
+    }
+
+    void setRevealed(bool revealed)
+    {
+        if (m_revealed == revealed)
+            return;
+        m_revealed = revealed;
+        m_fade.stop();
+        m_fade.setEasingCurve(revealed ? QEasingCurve::OutCubic : QEasingCurve::InCubic);
+        m_fade.setStartValue(m_progress);
+        m_fade.setEndValue(revealed ? 1.0 : 0.0);
+        m_fade.start();
+    }
+
+    QAbstractScrollArea *m_area;
+    QVariantAnimation m_fade;
+    qreal m_progress = 0;
+    bool m_revealed = false;
+};
+}
 
 /**
  * Replaces the default viewport of KItemListContainer by a
@@ -67,6 +167,8 @@ KItemListContainer::KItemListContainer(KItemListController *controller, QWidget 
 
     QGraphicsView *graphicsView = new KItemListContainerViewport(new QGraphicsScene(this), this);
     setViewport(graphicsView);
+
+    setVerticalScrollBar(new FinderScrollBar(this));
 
     m_horizontalSmoothScroller = new KItemListSmoothScroller(horizontalScrollBar(), this);
     m_verticalSmoothScroller = new KItemListSmoothScroller(verticalScrollBar(), this);

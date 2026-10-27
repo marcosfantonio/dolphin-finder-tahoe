@@ -38,7 +38,7 @@ if [[ ! -f /etc/arch-release ]] && ! grep -qi cachyos /etc/os-release 2>/dev/nul
     echo "Warning: this installer targets CachyOS/Arch Linux." >&2
 fi
 
-packages=(base-devel cmake extra-cmake-modules ninja qt6-base qt6-multimedia qt6-tools
+packages=(base-devel cmake extra-cmake-modules ninja qt6-base qt6-multimedia qt6-tools qt6-svg
     kcmutils knewstuff kcoreaddons ki18n kdbusaddons kbookmarks kconfig kio kparts
     solid kiconthemes kcompletion ktextwidgets knotifications kcrash kwindowsystem
     kwidgetsaddons kcodecs kguiaddons kcolorscheme kfilemetadata baloo baloo-widgets)

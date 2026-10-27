@@ -5,8 +5,8 @@
 It keeps Dolphin's file-management features while redesigning the window chrome:
 
 - Finder-style Places sidebar integrated with the window controls.
-- macOS traffic-light buttons for close, minimize, and maximize/restore.
-- Individual hover symbols on the traffic-light buttons.
+- Sidebar window controls rendered from the active KWin Aurorae SVG theme, with system-style icons as a fallback for other decorations.
+- Theme-provided hover, pressed and inactive states, plus a restore button when maximized.
 - Frameless rounded window with KWin blur/transparency support.
 - Floating toolbar controls inspired by macOS Tahoe Finder.
 - Back/forward navigation, view settings, split view, search, and other toolbar actions arranged in the Finder-style header.

@@ -484,6 +484,7 @@ target_sources(dolphinstatic PRIVATE
 
 target_link_libraries(dolphinstatic
     dolphinprivate
+    Qt6::Svg
     KF6::CoreAddons
     KF6::GuiAddons
     KF6::KCMUtils
