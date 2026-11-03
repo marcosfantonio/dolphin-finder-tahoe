@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "finderchrome.h"
+#include "findergtkbuttons.h"
 #include "finderpopupstyle.h"
 
 #include "config-dolphin.h"
@@ -24,9 +25,12 @@
 
 #include <QAbstractItemDelegate>
 #include <QApplication>
+#include <QDBusConnection>
+#include <QDBusConnectionInterface>
 #include <QDir>
 #include <QDockWidget>
 #include <QEnterEvent>
+#include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
@@ -211,27 +215,62 @@ public:
         const auto configPath = configHome + QStringLiteral("/kwinrc");
         auto *watcher = new QFileSystemWatcher(this);
         watcher->addPaths({configHome, configPath});
-        const auto reload = [this, watcher, configPath] {
+        for (const auto &version : {QStringLiteral("gtk-3.0"), QStringLiteral("gtk-4.0")}) {
+            const QString directory = configHome + QLatin1Char('/') + version;
+            if (QFileInfo::exists(directory))
+                watcher->addPath(directory);
+            if (QFileInfo::exists(directory + QStringLiteral("/settings.ini")))
+                watcher->addPath(directory + QStringLiteral("/settings.ini"));
+        }
+        const auto reload = [this, watcher, configPath, configHome] {
             if (!watcher->files().contains(configPath))
                 watcher->addPath(configPath);
+            for (const auto &version : {QStringLiteral("gtk-3.0"), QStringLiteral("gtk-4.0")}) {
+                const QString directory = configHome + QLatin1Char('/') + version;
+                const QString settings = directory + QStringLiteral("/settings.ini");
+                if (QFileInfo::exists(directory) && !watcher->directories().contains(directory))
+                    watcher->addPath(directory);
+                if (QFileInfo::exists(settings) && !watcher->files().contains(settings))
+                    watcher->addPath(settings);
+            }
             const auto config = KSharedConfig::openConfig(configPath, KConfig::SimpleConfig);
             config->reparseConfiguration();
             const KConfigGroup decoration(config, QStringLiteral("org.kde.kdecoration2"));
             const QString theme = decoration.readEntry("theme", QString());
             const QString prefix = QStringLiteral("__aurorae__svg__");
             m_themePath.clear();
-            if (decoration.readEntry("library", QString()) == QLatin1String("org.kde.kwin.aurorae") && theme.startsWith(prefix)) {
+            const QString library = decoration.readEntry("library", QString());
+            const auto *bus = QDBusConnection::sessionBus().interface();
+            const bool kwin = qEnvironmentVariable("XDG_CURRENT_DESKTOP").contains(QLatin1String("KDE"), Qt::CaseInsensitive)
+                || (bus && bus->isServiceRegistered(QStringLiteral("org.kde.KWin")));
+            if (kwin && (library == QLatin1String("org.kde.kwin.aurorae") || library == QLatin1String("org.kde.kwin.aurorae.v2")) && theme.startsWith(prefix)) {
                 m_themePath = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
                                                      QStringLiteral("aurorae/themes/") + theme.mid(prefix.size()),
                                                      QStandardPaths::LocateDirectory);
             }
             m_asset.clear();
+            m_gtkButton.reset();
             setFixedSize(16, 16);
             if (!m_themePath.isEmpty()) {
+                setProperty("finderWindowButtonBackend", "aurorae");
+                setProperty("finderWindowButtonTheme", m_themePath);
                 const QString name = theme.mid(prefix.size());
                 const auto themeConfig = KSharedConfig::openConfig(m_themePath + QLatin1Char('/') + name + QStringLiteral("rc"), KConfig::SimpleConfig);
                 const KConfigGroup layout(themeConfig, QStringLiteral("Layout"));
                 setFixedSize(qBound(12, layout.readEntry("ButtonWidth", 16), 32), qBound(12, layout.readEntry("ButtonHeight", 16), 32));
+                if (!watcher->directories().contains(m_themePath))
+                    watcher->addPath(m_themePath);
+                const auto assets = QDir(m_themePath).entryList({QStringLiteral("*.svg"), QStringLiteral("*.svgz"), QStringLiteral("*rc")}, QDir::Files);
+                for (const auto &asset : assets) {
+                    const QString path = m_themePath + QLatin1Char('/') + asset;
+                    if (!watcher->files().contains(path))
+                        watcher->addPath(path);
+                }
+            } else {
+                setProperty("finderWindowButtonBackend", "gtk");
+                setProperty("finderWindowButtonTheme", QString());
+                m_gtkButton = std::make_unique<FinderGtkWindowButton>(m_kind, configHome);
+                setFixedSize(m_gtkButton->sizeHint());
             }
             update();
         };
@@ -269,7 +308,10 @@ protected:
                                           : QStringLiteral("maximize");
         if (!m_themePath.isEmpty()) {
             if (m_asset != asset) {
-                m_renderer.load(m_themePath + QLatin1Char('/') + asset + QStringLiteral(".svg"));
+                QString path = m_themePath + QLatin1Char('/') + asset + QStringLiteral(".svg");
+                if (!QFileInfo::exists(path))
+                    path += QLatin1Char('z');
+                m_renderer.load(path);
                 m_asset = asset;
             }
             const bool active = window()->isActiveWindow();
@@ -285,6 +327,13 @@ protected:
                 return;
             }
         }
+        if (m_gtkButton) {
+            const QImage image = m_gtkButton->render(maximized, window()->isActiveWindow(), underMouse(), isDown(), devicePixelRatioF());
+            if (!image.isNull()) {
+                p.drawImage(rect(), image);
+                return;
+            }
+        }
         const auto icon = m_kind == 0 ? QStyle::SP_TitleBarCloseButton
             : m_kind == 1             ? QStyle::SP_TitleBarMinButton
             : maximized               ? QStyle::SP_TitleBarNormalButton
@@ -296,6 +345,7 @@ private:
     QString m_themePath;
     QString m_asset;
     QSvgRenderer m_renderer;
+    std::unique_ptr<FinderGtkWindowButton> m_gtkButton;
 };
 
 class FinderAppearance : public QObject

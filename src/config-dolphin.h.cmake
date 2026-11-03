@@ -4,6 +4,7 @@
 #cmakedefine01 HAVE_PACKAGEKIT
 #cmakedefine01 HAVE_TERMINAL
 #cmakedefine01 HAVE_X11
+#cmakedefine01 HAVE_GTK3
 
 #define KDE_INSTALL_FULL_DATADIR "${KDE_INSTALL_FULL_DATADIR}"
 

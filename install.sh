@@ -38,7 +38,7 @@ if [[ ! -f /etc/arch-release ]] && ! grep -qi cachyos /etc/os-release 2>/dev/nul
     echo "Warning: this installer targets CachyOS/Arch Linux." >&2
 fi
 
-packages=(base-devel cmake extra-cmake-modules ninja qt6-base qt6-multimedia qt6-tools qt6-svg
+packages=(base-devel cmake extra-cmake-modules ninja qt6-base qt6-multimedia qt6-tools qt6-svg gtk3 pkgconf
     kcmutils knewstuff kcoreaddons ki18n kdbusaddons kbookmarks kconfig kio kparts
     solid kiconthemes kcompletion ktextwidgets knotifications kcrash kwindowsystem
     kwidgetsaddons kcodecs kguiaddons kcolorscheme kfilemetadata baloo baloo-widgets)
@@ -114,12 +114,24 @@ mkdir -p "$profile/config" "$profile/data" "$profile/cache" "$profile/state" \
 icon_source="$repo_dir/src/Dolphin.png"
 cp -f "$icon_source" "$icon_dir/org.kde.dolphin-finder.png"
 
-if [[ ! -e "$profile/config/kdeglobals" && -f "$HOME/.config/kdeglobals" ]]; then
-    cp -a "$HOME/.config/kdeglobals" "$profile/config/kdeglobals"
-fi
-if [[ ! -e "$profile/config/Kvantum" && -d "$HOME/.config/Kvantum" ]]; then
-    cp -a "$HOME/.config/Kvantum" "$profile/config/Kvantum"
-fi
+# Isolate file-manager settings, not the desktop appearance. Copies of these
+# files go stale and leave native dialogs (e.g. Properties) on an old dark theme.
+system_config_home="${DOLPHIN_FINDER_SYSTEM_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}}"
+for appearance in kdeglobals Kvantum; do
+    source="$system_config_home/$appearance"
+    target="$profile/config/$appearance"
+    if [[ -e "$source" && "$source" != "$target" ]]; then
+        if [[ -L "$target" && "$(readlink -- "$target")" == "$source" ]]; then
+            continue
+        fi
+        if [[ -e "$target" || -L "$target" ]]; then
+            backup="$target.backup-$(date +%Y%m%d-%H%M%S)-$$"
+            mv -- "$target" "$backup"
+            printf 'Previous appearance settings preserved at %s\n' "$backup"
+        fi
+        ln -s -- "$source" "$target"
+    fi
+done
 if [[ ! -e "$profile/config/dolphinrc" ]]; then
     printf '[General]\nShowSelectionToggle=false\n' > "$profile/config/dolphinrc"
 fi

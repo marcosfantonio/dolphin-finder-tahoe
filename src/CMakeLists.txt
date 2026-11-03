@@ -291,6 +291,7 @@ target_sources(dolphinstatic PRIVATE
     dolphindockwidget.cpp
     dolphinmainwindow.cpp
     finderchrome.cpp
+    findergtkbuttons.cpp
     dolphinviewcontainer.cpp
     dolphincontextmenu.cpp
     dolphinnavigatorswidgetaction.cpp
@@ -492,6 +493,10 @@ target_link_libraries(dolphinstatic
     KF6::Notifications
     KF6::BookmarksWidgets
 )
+
+if(HAVE_GTK3)
+    target_link_libraries(dolphinstatic PkgConfig::GTK3)
+endif()
 
 if(HAVE_PACKAGEKIT)
     target_link_libraries(

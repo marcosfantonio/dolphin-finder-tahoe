@@ -383,6 +383,28 @@ int main(int argc, char **argv)
                     return;
                 }
             }
+            // Check the selected decoration backend, including Aurorae v2.
+            int windowControls = 0;
+            const auto expectedBackend = qEnvironmentVariable("DOLPHIN_FINDER_TEST_WINDOW_BUTTON_BACKEND");
+            for (auto *button : mainWindow->findChildren<QToolButton *>()) {
+                const QString backend = button->property("finderWindowButtonBackend").toString();
+                if (backend.isEmpty())
+                    continue;
+                ++windowControls;
+                if (!expectedBackend.isEmpty() && backend != expectedBackend) {
+                    fail("window controls did not select the expected desktop theme backend");
+                    return;
+                }
+                if (backend == QLatin1String("aurorae") && button->property("finderWindowButtonTheme").toString().isEmpty()) {
+                    fail("Aurorae window controls have no theme directory");
+                    return;
+                }
+            }
+            if (windowControls != 3) {
+                fail("missing themed close, minimize or maximize control");
+                return;
+            }
+
             // Exercise live theme changes without changing the user's desktop settings.
             const auto originalPalette = app.palette();
             for (const bool dark : {false, true}) {

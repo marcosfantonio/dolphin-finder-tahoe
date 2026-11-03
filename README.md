@@ -5,7 +5,7 @@
 It keeps Dolphin's file-management features while redesigning the window chrome:
 
 - Finder-style Places sidebar integrated with the window controls.
-- Sidebar window controls rendered from the active KWin Aurorae SVG theme, with system-style icons as a fallback for other decorations.
+- Sidebar window controls rendered from the active KWin Aurorae SVG theme (including Aurorae v2), with native GTK 3 theme rendering as a fallback outside KWin or for decorations without Aurorae SVGs. Standard Qt icons are used only if GTK is unavailable.
 - Theme-provided hover, pressed and inactive states, plus a restore button when maximized.
 - Frameless rounded window with KWin blur/transparency support.
 - Floating toolbar controls inspired by macOS Tahoe Finder.
@@ -96,6 +96,10 @@ The installer uses a separate user profile under:
 ```text
 ~/.local/share/dolphin-finder
 ```
+
+The file-manager settings remain isolated, while `kdeglobals` and Kvantum settings
+link to the desktop configuration so native dialogs follow the current system
+theme. Older appearance copies are preserved as backups during migration.
 
 Setting Dolphin Finder as the default file manager is an explicit user decision.
 
