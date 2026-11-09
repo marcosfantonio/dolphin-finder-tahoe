@@ -219,7 +219,9 @@ DolphinTabPage *DolphinTabWidget::openNewTab(const QUrl &primaryUrl, const QUrl 
 
 void DolphinTabWidget::openDirectories(const QList<QUrl> &dirs, bool splitView)
 {
-    Q_ASSERT(dirs.size() > 0);
+    if (dirs.isEmpty()) {
+        return;
+    }
 
     bool somethingWasAlreadyOpen = false;
 
@@ -252,7 +254,9 @@ void DolphinTabWidget::openDirectories(const QList<QUrl> &dirs, bool splitView)
 
 void DolphinTabWidget::openFiles(const QList<QUrl> &files, bool splitView)
 {
-    Q_ASSERT(files.size() > 0);
+    if (files.isEmpty()) {
+        return;
+    }
 
     // Get all distinct directories from 'files'.
     QList<QUrl> dirsThatNeedToBeOpened;

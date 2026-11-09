@@ -1040,6 +1040,11 @@ void DolphinMainWindowTest::testGoActions()
 
 void DolphinMainWindowTest::testOpenFiles()
 {
+    const int initialTabCount = m_mainWindow->m_tabWidget->count();
+    m_mainWindow->openFiles({}, false);
+    m_mainWindow->openDirectories({}, false);
+    QCOMPARE(m_mainWindow->m_tabWidget->count(), initialTabCount);
+
     QScopedPointer<TestDir> testDir{new TestDir()};
     QString testDirUrl(QDir::cleanPath(testDir->url().toString()));
     testDir->createDir("a");
